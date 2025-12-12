@@ -20,7 +20,26 @@ export const fileToGenerativePart = async (file: File | Blob): Promise<string> =
   });
 };
 
-const apiKey = process.env.API_KEY || '';
+// Robust API Key Retrieval for Vite/Cloudflare
+const getApiKey = (): string => {
+  // 1. Try standard Vite environment variable (Recommended)
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+    // @ts-ignore
+    return import.meta.env.VITE_API_KEY;
+  }
+  
+  // 2. Try process.env (Legacy/Custom config)
+  // @ts-ignore
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    // @ts-ignore
+    return process.env.API_KEY;
+  }
+
+  return '';
+};
+
+const apiKey = getApiKey();
 const ai = new GoogleGenAI({ apiKey });
 
 export interface ImagePart {
@@ -33,6 +52,10 @@ export interface ImagePart {
  */
 export const optimizePrompt = async (formData: CoverFormData): Promise<OptimizationResult> => {
   try {
+    if (!apiKey) {
+        throw new Error("API key is missing. Please check your Cloudflare Environment Variables (VITE_API_KEY).");
+    }
+
     const model = "gemini-2.5-flash";
     
     // Construct the user message based on the form data
@@ -97,6 +120,10 @@ export const generateCoverImage = async (
     logoImagePart: ImagePart | null
 ): Promise<string> => {
     try {
+        if (!apiKey) {
+             throw new Error("API key is missing. Please check your Cloudflare Environment Variables (VITE_API_KEY).");
+        }
+
         // Upgrade to pro-image-preview for high quality text rendering capabilities
         const model = "gemini-3-pro-image-preview";
 

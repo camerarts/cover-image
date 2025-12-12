@@ -20,42 +20,26 @@ export const fileToGenerativePart = async (file: File | Blob): Promise<string> =
   });
 };
 
-// Robust API Key Retrieval for Vite/Cloudflare
-const getApiKey = (): string => {
-  // 1. Try standard Vite environment variable (Recommended)
-  // @ts-ignore
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
-    // @ts-ignore
-    return import.meta.env.VITE_API_KEY;
-  }
-  
-  // 2. Try process.env (Legacy/Custom config)
-  // @ts-ignore
-  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-    // @ts-ignore
-    return process.env.API_KEY;
-  }
-
-  return '';
-};
-
-const apiKey = getApiKey();
-const ai = new GoogleGenAI({ apiKey });
-
 export interface ImagePart {
     mimeType: string;
     data: string;
 }
 
+// Helper to create a client instance on the fly
+const getAiClient = (apiKey: string) => {
+  return new GoogleGenAI({ apiKey });
+};
+
 /**
  * Step 1: Use Gemini Flash to act as the "Meta Prompt Assistant" and generate the optimized prompt.
  */
-export const optimizePrompt = async (formData: CoverFormData): Promise<OptimizationResult> => {
+export const optimizePrompt = async (formData: CoverFormData, apiKey: string): Promise<OptimizationResult> => {
   try {
     if (!apiKey) {
-        throw new Error("API key is missing. Please check your Cloudflare Environment Variables (VITE_API_KEY).");
+        throw new Error("API Key 未设置。请先登录使用系统 Key，或在设置中输入您的自定义 Key。");
     }
 
+    const ai = getAiClient(apiKey);
     const model = "gemini-2.5-flash";
     
     // Construct the user message based on the form data
@@ -112,18 +96,19 @@ export const optimizePrompt = async (formData: CoverFormData): Promise<Optimizat
 
 /**
  * Step 2: Use Gemini Pro Image (or Flash Image) to generate the actual image.
- * Accepts raw base64 data parts for flexibility (supporting both uploads and fetched URLs).
  */
 export const generateCoverImage = async (
     prompt: string, 
     personImagePart: ImagePart | null, 
-    logoImagePart: ImagePart | null
+    logoImagePart: ImagePart | null,
+    apiKey: string
 ): Promise<string> => {
     try {
         if (!apiKey) {
-             throw new Error("API key is missing. Please check your Cloudflare Environment Variables (VITE_API_KEY).");
+             throw new Error("API Key 未设置。请先登录使用系统 Key，或在设置中输入您的自定义 Key。");
         }
 
+        const ai = getAiClient(apiKey);
         // Upgrade to pro-image-preview for high quality text rendering capabilities
         const model = "gemini-3-pro-image-preview";
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CoverFormData, OptimizationResult } from './types';
 import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
@@ -170,6 +171,7 @@ const App: React.FC = () => {
                         <TextInput 
                             id="subTitle" name="subTitle" label="Q2. 副标题" placeholder="输入副标题 (可选)"
                             value={formData.subTitle} onChange={handleInputChange} 
+                            onPasteClick={() => handlePaste('subTitle')}
                         />
                          <SelectInput 
                             id="promiseLevel" name="promiseLevel" label="Q3. 副标题承诺力度"

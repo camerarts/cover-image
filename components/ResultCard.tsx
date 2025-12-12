@@ -56,7 +56,8 @@ export const AnalysisSection: React.FC<{
 export const PromptSection: React.FC<{
   status: string;
   result: OptimizationResult | null;
-}> = ({ status, result }) => {
+  modelName?: string;
+}> = ({ status, result, modelName = "Gemini 2.5 Flash" }) => {
    const [modalContent, setModalContent] = useState<{ title: string; text: string } | null>(null);
 
    const PromptBox = ({ title, text, colorClass, borderColor }: { title: string; text: string; colorClass: string; borderColor: string }) => (
@@ -91,9 +92,17 @@ export const PromptSection: React.FC<{
   return (
     <>
         <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">Prompt (绘图提示词)</h3>
                     <StatusIcon status={status} hasResult={!!result} />
+                </div>
+                 {result && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700">
+                        <Cpu className="w-3 h-3 text-slate-400" />
+                        <span className="text-[10px] font-mono text-slate-400">{modelName}</span>
+                    </div>
+                )}
             </div>
             
             {result ? (
@@ -160,14 +169,23 @@ export const PromptSection: React.FC<{
 export const ImagePreviewSection: React.FC<{
     status: string;
     generatedImage: string | null;
-}> = ({ status, generatedImage }) => {
+    modelName?: string;
+}> = ({ status, generatedImage, modelName = "Gemini 3 Pro Image" }) => {
     return (
         <div className="space-y-2">
-             <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-sm font-semibold text-teal-400 uppercase tracking-wider">封面图预览</h3>
-                 {status === 'generating_image' && <Loader2 className="w-4 h-4 animate-spin text-teal-400" />}
-                 {status === 'complete' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                 {status === 'error' && generatedImage === null && <XCircle className="w-4 h-4 text-red-500" />}
+             <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-teal-400 uppercase tracking-wider">封面图预览</h3>
+                    {status === 'generating_image' && <Loader2 className="w-4 h-4 animate-spin text-teal-400" />}
+                    {status === 'complete' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                    {status === 'error' && generatedImage === null && <XCircle className="w-4 h-4 text-red-500" />}
+                </div>
+                 {generatedImage && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700">
+                        <Cpu className="w-3 h-3 text-slate-400" />
+                        <span className="text-[10px] font-mono text-slate-400">{modelName}</span>
+                    </div>
+                )}
             </div>
 
             <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black ring-1 ring-white/10 shadow-2xl group">

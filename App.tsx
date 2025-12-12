@@ -1,11 +1,41 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CoverFormData, OptimizationResult } from './types';
 import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
 import { SelectInput, TextInput, FileInput } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, Lock, KeyRound, X } from 'lucide-react';
+
+// Get Environment Variables Safely
+const getEnvVar = (key: string): string => {
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+      // @ts-ignore
+      return import.meta.env[key];
+  }
+  // @ts-ignore
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      // @ts-ignore
+      return process.env[key];
+  }
+  // Try mapping VITE_ prefix as fallback
+  const viteKey = `VITE_${key}`;
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[viteKey]) {
+      // @ts-ignore
+      return import.meta.env[viteKey];
+  }
+   // @ts-ignore
+   if (typeof process !== 'undefined' && process.env && process.env[viteKey]) {
+      // @ts-ignore
+      return process.env[viteKey];
+  }
+
+  return '';
+};
+
+const SYSTEM_API_KEY = getEnvVar('API_KEY');
+const SYSTEM_PASSWORD = getEnvVar('PASSWORD');
 
 const App: React.FC = () => {
   const [formData, setFormData] = useState<CoverFormData>(INITIAL_FORM_STATE);
@@ -16,6 +46,50 @@ const App: React.FC = () => {
   const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Auth & Settings State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [customApiKey, setCustomApiKey] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+
+  // Initial Check
+  useEffect(() => {
+    // Optional: Check local storage for persistent login if desired (skipping for now based on strict "password var" requirement)
+    const storedCustomKey = localStorage.getItem('viral_cover_custom_key');
+    if (storedCustomKey) setCustomApiKey(storedCustomKey);
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === SYSTEM_PASSWORD) {
+        setIsLoggedIn(true);
+        setShowLoginModal(false);
+        setPasswordInput('');
+        setErrorMsg(null);
+    } else {
+        alert("密码错误");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setStatus('idle');
+    setOptimizationResult(null);
+    setGeneratedImage(null);
+  };
+
+  const saveSettings = () => {
+    localStorage.setItem('viral_cover_custom_key', customApiKey);
+    setShowSettingsModal(false);
+  };
+
+  const getEffectiveApiKey = () => {
+    if (customApiKey) return customApiKey;
+    if (isLoggedIn) return SYSTEM_API_KEY;
+    return '';
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -30,12 +104,17 @@ const App: React.FC = () => {
         }
     } catch (err) {
         console.error('Failed to read clipboard', err);
-        // Fallback or silence as some browsers restrict this
     }
   };
 
   const validateForm = (): boolean => {
     setErrorMsg(null);
+    const apiKey = getEffectiveApiKey();
+    if (!apiKey) {
+        setErrorMsg("API Key 未配置。请点击右上角登录使用系统 Key，或在设置中输入您的自定义 Key。");
+        return false;
+    }
+
     if (formData.personSource === '1' && !personImage) {
         setErrorMsg("请完成 [Q5]：您选择了使用上传照片，请上传一张真人照片。");
         return false;
@@ -56,7 +135,7 @@ const App: React.FC = () => {
     setGeneratedImage(null);
 
     try {
-      const result = await optimizePrompt(formData);
+      const result = await optimizePrompt(formData, getEffectiveApiKey());
       setOptimizationResult(result);
       setStatus('prompt_success');
     } catch (err) {
@@ -79,11 +158,9 @@ const App: React.FC = () => {
 
       // Handle Person Image Source
       if (formData.personSource === '1' && personImage) {
-        // Option 1: User Upload
         const base64Data = await fileToGenerativePart(personImage);
         personPart = { mimeType: personImage.type, data: base64Data };
       } else if (formData.personSource === '3') {
-        // Option 3: Fetch Specific URL
         try {
             const response = await fetch(SPECIFIC_PERSON_IMAGE_URL);
             if (!response.ok) throw new Error("Failed to load preset person image");
@@ -96,13 +173,12 @@ const App: React.FC = () => {
         }
       }
 
-      // Handle Logo Image Source
       if (formData.logoType === '2' && logoImage) {
         const base64Data = await fileToGenerativePart(logoImage);
         logoPart = { mimeType: logoImage.type, data: base64Data };
       }
 
-      const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart);
+      const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart, getEffectiveApiKey());
       setGeneratedImage(imageUrl);
       setStatus('complete');
     } catch (err) {
@@ -142,6 +218,45 @@ const App: React.FC = () => {
                     Next-Gen Visual Intelligence
                 </p>
             </div>
+        </div>
+
+        {/* Auth & Settings Buttons */}
+        <div className="flex items-center gap-3">
+             {isLoggedIn ? (
+                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
+                     <Lock className="w-3 h-3" /> 已登录 (System Key)
+                 </div>
+             ) : (
+                customApiKey && (
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium">
+                        <KeyRound className="w-3 h-3" /> 使用自定义 Key
+                    </div>
+                )
+             )}
+
+             <button 
+                onClick={() => setShowSettingsModal(true)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                title="设置 API Key"
+             >
+                <Settings className="w-5 h-5" />
+             </button>
+
+             {isLoggedIn ? (
+                <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+                >
+                    <LogOut className="w-4 h-4" /> 退出
+                </button>
+             ) : (
+                <button 
+                    onClick={() => setShowLoginModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-black hover:bg-slate-200 rounded-lg transition-colors text-sm font-bold shadow-lg shadow-white/10"
+                >
+                    <LogIn className="w-4 h-4" /> 登录
+                </button>
+             )}
         </div>
       </header>
 
@@ -403,6 +518,78 @@ const App: React.FC = () => {
         </div>
 
       </main>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-emerald-400" />
+                        管理员登录
+                    </h3>
+                    <button onClick={() => setShowLoginModal(false)} className="text-slate-400 hover:text-white">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                        <label className="block text-sm text-slate-400 mb-2">访问密码</label>
+                        <input 
+                            type="password"
+                            value={passwordInput}
+                            onChange={(e) => setPasswordInput(e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                            placeholder="输入密码以使用系统 API Key"
+                            autoFocus
+                        />
+                    </div>
+                    <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold">
+                        验证
+                    </button>
+                </form>
+             </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-purple-400" />
+                        设置 API Key
+                    </h3>
+                    <button onClick={() => setShowSettingsModal(false)} className="text-slate-400 hover:text-white">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700 text-sm text-slate-300">
+                        <p>如果您没有系统访问密码，可以在此输入您自己的 Google Gemini API Key。</p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline mt-1 inline-block">
+                            获取 API Key &rarr;
+                        </a>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-slate-400 mb-2">Google Gemini API Key</label>
+                        <input 
+                            type="password"
+                            value={customApiKey}
+                            onChange={(e) => setCustomApiKey(e.target.value)}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                            placeholder="AIzaSy..."
+                        />
+                    </div>
+                    <button onClick={saveSettings} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold">
+                        保存设置
+                    </button>
+                </div>
+             </div>
+        </div>
+      )}
+
     </div>
   );
 };

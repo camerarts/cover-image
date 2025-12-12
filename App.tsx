@@ -573,8 +573,7 @@ const App: React.FC = () => {
                         <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-sm text-slate-300">
 <pre>{`{
   "mainTitle": "你的主标题",  // 必填
-  "subTitle": "你的副标题",   // 可选
-  "apiKey": "sk-..."        // 可选 (若服务器未配置 Env Key)
+  "subTitle": "你的副标题"    // 可选
 }`}</pre>
                         </div>
                         <p className="text-xs text-slate-500">

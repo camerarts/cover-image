@@ -4,7 +4,7 @@ import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from 
 import { SelectInput, TextInput, FileInput } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Lock, Key } from 'lucide-react';
 
 // Local BentoCard Component for layout consistency
 const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { children: React.ReactNode, className?: string, title?: string, icon?: any, gradient?: string }) => (
@@ -32,6 +32,13 @@ const App: React.FC = () => {
   const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Auth & Settings State
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [customApiKey, setCustomApiKey] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -63,16 +70,46 @@ const App: React.FC = () => {
     return true;
   };
 
+  // Auth Logic
+  const handleLogin = () => {
+    if (passwordInput === process.env.PASSWORD) {
+        setIsLoggedIn(true);
+        setShowLoginModal(false);
+        setPasswordInput('');
+    } else {
+        alert("密码错误");
+    }
+  };
+
+  const handleLogout = () => {
+      setIsLoggedIn(false);
+  };
+
+  // Helper to determine which key to use
+  const getEffectiveApiKey = () => {
+      if (customApiKey.trim()) return customApiKey;
+      if (isLoggedIn) return undefined; // Undefined means let the service use process.env.API_KEY
+      return null; // Null means no valid key available
+  };
+
   // Step 1: Generate Prompt & Strategy
   const handleGenerateStrategy = async () => {
     if (!validateForm()) return;
+    
+    const effectiveKey = getEffectiveApiKey();
+    if (effectiveKey === null) {
+        setErrorMsg("请先登录或在设置中输入自定义 API Key");
+        setStatus('error');
+        return;
+    }
 
     setStatus('analyzing');
     setOptimizationResult(null);
     setGeneratedImage(null);
 
     try {
-      const result = await optimizePrompt(formData);
+      // If effectiveKey is undefined (logged in), the service will use env key.
+      const result = await optimizePrompt(formData, effectiveKey);
       setOptimizationResult(result);
       setStatus('prompt_success');
     } catch (err) {
@@ -85,6 +122,13 @@ const App: React.FC = () => {
   // Step 2: Generate Image
   const handleGenerateImage = async () => {
     if (!optimizationResult) return;
+
+    const effectiveKey = getEffectiveApiKey();
+    if (effectiveKey === null) {
+        setErrorMsg("请先登录或在设置中输入自定义 API Key");
+        setStatus('error');
+        return;
+    }
 
     setStatus('generating_image');
     setErrorMsg(null);
@@ -115,7 +159,7 @@ const App: React.FC = () => {
         logoPart = { mimeType: logoImage.type, data: base64Data };
       }
 
-      const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart);
+      const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart, effectiveKey);
       setGeneratedImage(imageUrl);
       setStatus('complete');
     } catch (err) {
@@ -153,11 +197,40 @@ const App: React.FC = () => {
                 </h1>
             </div>
         </div>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-3">
+             <button
+                onClick={() => setShowSettingsModal(true)}
+                className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                title="设置 API Key"
+             >
+                <Settings className="w-5 h-5" />
+             </button>
+             
+             {isLoggedIn ? (
+                 <button
+                    onClick={handleLogout}
+                    className="p-2.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all backdrop-blur-sm"
+                    title="已登录 (点击退出)"
+                 >
+                    <LogOut className="w-5 h-5" />
+                 </button>
+             ) : (
+                 <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                    title="登录管理员"
+                 >
+                    <LogIn className="w-5 h-5" />
+                 </button>
+             )}
+        </div>
       </header>
 
       <main className="relative z-10 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20">
         
-        {/* Left Column: Input Grid (Bento Style) - Changed to col-span-6 (50%) */}
+        {/* Left Column: Input Grid (Bento Style) - 50% */}
         <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
             
             {/* 1. Content (Wide) */}
@@ -307,7 +380,7 @@ const App: React.FC = () => {
 
         </div>
 
-        {/* Right Column: Sticky Output (Stacked Bento) - Changed to col-span-6 (50%) */}
+        {/* Right Column: Sticky Output (Stacked Bento) - 50% */}
         <div className="lg:col-span-6 flex flex-col gap-6">
             <div className="lg:sticky lg:top-8 space-y-6">
                 
@@ -386,7 +459,78 @@ const App: React.FC = () => {
         </div>
 
       </main>
+    
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+                <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                    <X className="w-5 h-5" />
+                </button>
+                <div className="flex flex-col items-center mb-6">
+                    <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mb-3">
+                        <Lock className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white">管理员登录</h2>
+                    <p className="text-sm text-slate-400 mt-1">输入密码以使用后台 API Key</p>
+                </div>
+                <div className="space-y-4">
+                    <input 
+                        type="password"
+                        placeholder="请输入密码"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                        value={passwordInput}
+                        onChange={(e) => setPasswordInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                    />
+                    <button 
+                        onClick={handleLogin}
+                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-colors"
+                    >
+                        确认登录
+                    </button>
+                </div>
+             </div>
+        </div>
+      )}
 
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+                <button onClick={() => setShowSettingsModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                    <X className="w-5 h-5" />
+                </button>
+                <div className="flex flex-col items-center mb-6">
+                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3 border border-slate-700">
+                        <Key className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white">API Key 设置</h2>
+                    <p className="text-sm text-slate-400 mt-1">使用您自己的 Gemini API Key (可选)</p>
+                </div>
+                <div className="space-y-4">
+                    <div className="bg-slate-800/50 p-4 rounded-lg text-sm text-slate-400 border border-slate-700/50">
+                        <p className="mb-2">如果您未登录管理员账号，则必须在此输入您自己的 Key 才能使用。</p>
+                        <p>该 Key 仅保存在当前会话中，刷新页面后会重置。</p>
+                    </div>
+                    <input 
+                        type="password"
+                        placeholder="sk-..."
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-slate-500 outline-none font-mono"
+                        value={customApiKey}
+                        onChange={(e) => setCustomApiKey(e.target.value)}
+                    />
+                    <button 
+                        onClick={() => setShowSettingsModal(false)}
+                        className="w-full bg-white text-slate-900 hover:bg-slate-200 font-bold py-3 rounded-lg transition-colors"
+                    >
+                        保存并关闭
+                    </button>
+                </div>
+             </div>
+        </div>
+      )}
+      
     </div>
   );
 };

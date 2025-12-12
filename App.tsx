@@ -21,6 +21,18 @@ const App: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handlePaste = async (fieldName: keyof CoverFormData) => {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+            setFormData(prev => ({ ...prev, [fieldName]: text }));
+        }
+    } catch (err) {
+        console.error('Failed to read clipboard', err);
+        // Fallback or silence as some browsers restrict this
+    }
+  };
+
   const validateForm = (): boolean => {
     setErrorMsg(null);
     if (formData.personSource === '1' && !personImage) {
@@ -151,6 +163,7 @@ const App: React.FC = () => {
                     <TextInput 
                         id="mainTitle" name="mainTitle" label="Q1. 主标题 (必填)" placeholder="输入封面主标题"
                         value={formData.mainTitle} onChange={handleInputChange} 
+                        onPasteClick={() => handlePaste('mainTitle')}
                     />
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -188,16 +201,18 @@ const App: React.FC = () => {
                         />
                     </div>
                     
-                    <SelectInput 
-                        id="backgroundElement" name="backgroundElement" label="Q9. 背景元素"
-                        options={DROPDOWN_OPTIONS.backgroundElement}
-                        value={formData.backgroundElement} onChange={handleInputChange}
-                    />
-                     <SelectInput 
-                        id="textLayout" name="textLayout" label="Q11. 文字排版"
-                        options={DROPDOWN_OPTIONS.textLayout}
-                        value={formData.textLayout} onChange={handleInputChange}
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <SelectInput 
+                            id="backgroundElement" name="backgroundElement" label="Q9. 背景元素"
+                            options={DROPDOWN_OPTIONS.backgroundElement}
+                            value={formData.backgroundElement} onChange={handleInputChange}
+                        />
+                        <SelectInput 
+                            id="textLayout" name="textLayout" label="Q11. 文字排版"
+                            options={DROPDOWN_OPTIONS.textLayout}
+                            value={formData.textLayout} onChange={handleInputChange}
+                        />
+                    </div>
                  </div>
 
                 {/* Section 3: Person */}
@@ -208,7 +223,7 @@ const App: React.FC = () => {
                             人物主体
                         </h2>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <SelectInput 
                             id="personSource" name="personSource" label="Q5. 人物来源"
                             options={DROPDOWN_OPTIONS.personSource}
@@ -218,6 +233,11 @@ const App: React.FC = () => {
                             id="personPosition" name="personPosition" label="Q6. 人物位置"
                             options={DROPDOWN_OPTIONS.personPosition}
                             value={formData.personPosition} onChange={handleInputChange}
+                        />
+                         <SelectInput 
+                            id="expressionStrength" name="expressionStrength" label="Q7. 表情强度"
+                            options={DROPDOWN_OPTIONS.expressionStrength}
+                            value={formData.expressionStrength} onChange={handleInputChange}
                         />
                     </div>
                     
@@ -244,12 +264,6 @@ const App: React.FC = () => {
                             </div>
                         </div>
                     )}
-
-                    <SelectInput 
-                        id="expressionStrength" name="expressionStrength" label="Q7. 表情强度"
-                        options={DROPDOWN_OPTIONS.expressionStrength}
-                        value={formData.expressionStrength} onChange={handleInputChange}
-                    />
                 </div>
 
                  {/* Section 4: Brand */}
@@ -260,17 +274,18 @@ const App: React.FC = () => {
                             品牌元素
                         </h2>
                     </div>
-                    <TextInput 
-                        id="brandName" name="brandName" label="Q10-1. 品牌文本" placeholder="例如: 铁锤人"
-                        value={formData.brandName} onChange={handleInputChange} 
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                         <SelectInput 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <TextInput 
+                            id="brandName" name="brandName" label="Q10-1. 品牌文本" placeholder="例如: 铁锤人"
+                            value={formData.brandName} onChange={handleInputChange}
+                            onPasteClick={() => handlePaste('brandName')}
+                        />
+                        <SelectInput 
                             id="logoType" name="logoType" label="Q10-2. Logo 类型"
                             options={DROPDOWN_OPTIONS.logoType}
                             value={formData.logoType} onChange={handleInputChange}
                         />
-                         <SelectInput 
+                        <SelectInput 
                             id="brandIntensity" name="brandIntensity" label="Q10-3. 露出强度"
                             options={DROPDOWN_OPTIONS.brandIntensity}
                             value={formData.brandIntensity} onChange={handleInputChange}
@@ -297,6 +312,7 @@ const App: React.FC = () => {
                     <TextInput 
                         id="specialRequirements" name="specialRequirements" label="Q12. 特殊要求 (可选)" placeholder="例如: 必须有猫，不要红色..."
                         value={formData.specialRequirements} onChange={handleInputChange} 
+                        onPasteClick={() => handlePaste('specialRequirements')}
                     />
                  </div>
 

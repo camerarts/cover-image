@@ -33,7 +33,7 @@ const DEFAULT_CONFIG = {
   expressionStrength: '2',
   colorStyle: '3', // Blue + Yellow contrast (High CTR)
   backgroundElement: '1',
-  brandName: '铁锤人',
+  brandName: '', // Default to empty
   logoType: '1', // Text Logo
   brandIntensity: '2',
   textLayout: '1',
@@ -50,7 +50,7 @@ export const onRequestPost = async (context: { request: Request, env: Env }) => 
     
     // 1. Parse Input
     const body = await request.json() as any;
-    const { mainTitle, subTitle, apiKey } = body;
+    const { mainTitle, subTitle } = body;
 
     if (!mainTitle) {
       return new Response(JSON.stringify({ error: "Missing required parameter: mainTitle" }), {
@@ -59,11 +59,11 @@ export const onRequestPost = async (context: { request: Request, env: Env }) => 
       });
     }
 
-    // 2. Auth Check (Use provided key or Env key)
-    const finalApiKey = apiKey || env.API_KEY;
+    // 2. Auth Check (Use Env key exclusively)
+    const finalApiKey = env.API_KEY;
     if (!finalApiKey) {
-       return new Response(JSON.stringify({ error: "API Key not configured on server and not provided in request." }), {
-        status: 401,
+       return new Response(JSON.stringify({ error: "Server API Key not configured." }), {
+        status: 500,
         headers: { "Content-Type": "application/json" }
       });
     }

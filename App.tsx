@@ -154,9 +154,9 @@ const App: React.FC = () => {
              <div className="space-y-10">
                 {/* Section 1: Content */}
                 <div className="space-y-6">
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
-                        <LayoutTemplate className="w-5 h-5 text-purple-400" />
-                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300">
+                    <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent border-l-4 border-purple-500">
+                        <LayoutTemplate className="w-6 h-6 text-purple-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-white drop-shadow-md">
                             核心文案
                         </h2>
                     </div>
@@ -183,9 +183,9 @@ const App: React.FC = () => {
 
                 {/* Section 2: Visual & Composition */}
                  <div className="space-y-6">
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
-                        <ImageIcon className="w-5 h-5 text-blue-400" />
-                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">
+                    <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-transparent border-l-4 border-blue-500">
+                        <ImageIcon className="w-6 h-6 text-blue-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-white drop-shadow-md">
                             视觉与构图
                         </h2>
                     </div>
@@ -219,9 +219,9 @@ const App: React.FC = () => {
 
                 {/* Section 3: Person */}
                 <div className="space-y-6">
-                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
-                        <User className="w-5 h-5 text-emerald-400" />
-                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-300">
+                     <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-transparent border-l-4 border-emerald-500">
+                        <User className="w-6 h-6 text-emerald-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-white drop-shadow-md">
                             人物主体
                         </h2>
                     </div>
@@ -270,9 +270,9 @@ const App: React.FC = () => {
 
                  {/* Section 4: Brand */}
                  <div className="space-y-6">
-                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
-                        <BadgeCheck className="w-5 h-5 text-orange-400" />
-                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-amber-300">
+                     <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-500">
+                        <BadgeCheck className="w-6 h-6 text-orange-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-white drop-shadow-md">
                             品牌元素
                         </h2>
                     </div>

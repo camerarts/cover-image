@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, Upload } from 'lucide-react';
+import { ChevronDown, Upload, ClipboardPaste } from 'lucide-react';
 
 interface LabelProps {
   children: React.ReactNode;
@@ -38,16 +38,29 @@ export const SelectInput: React.FC<SelectProps> = ({ label, options, className, 
 
 interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  onPasteClick?: () => void;
 }
 
-export const TextInput: React.FC<TextInputProps> = ({ label, className, ...props }) => (
+export const TextInput: React.FC<TextInputProps> = ({ label, className, onPasteClick, ...props }) => (
   <div className="w-full">
     <Label htmlFor={props.id}>{label}</Label>
-    <input
-      type="text"
-      className={`w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder-slate-500 ${className}`}
-      {...props}
-    />
+    <div className="relative group">
+      <input
+        type="text"
+        className={`w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder-slate-500 ${onPasteClick ? 'pr-10' : ''} ${className}`}
+        {...props}
+      />
+      {onPasteClick && (
+        <button
+          type="button"
+          onClick={onPasteClick}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-purple-400 hover:bg-slate-700/50 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+          title="粘贴内容"
+        >
+          <ClipboardPaste className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   </div>
 );
 

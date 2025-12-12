@@ -25,21 +25,13 @@ export interface ImagePart {
     data: string;
 }
 
-// Helper to create a client instance on the fly
-const getAiClient = (apiKey: string) => {
-  return new GoogleGenAI({ apiKey });
-};
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
  * Step 1: Use Gemini Flash to act as the "Meta Prompt Assistant" and generate the optimized prompt.
  */
-export const optimizePrompt = async (formData: CoverFormData, apiKey: string): Promise<OptimizationResult> => {
+export const optimizePrompt = async (formData: CoverFormData): Promise<OptimizationResult> => {
   try {
-    if (!apiKey) {
-        throw new Error("API Key 未设置。请先登录使用系统 Key，或在设置中输入您的自定义 Key。");
-    }
-
-    const ai = getAiClient(apiKey);
     const model = "gemini-2.5-flash";
     
     // Construct the user message based on the form data
@@ -100,15 +92,9 @@ export const optimizePrompt = async (formData: CoverFormData, apiKey: string): P
 export const generateCoverImage = async (
     prompt: string, 
     personImagePart: ImagePart | null, 
-    logoImagePart: ImagePart | null,
-    apiKey: string
+    logoImagePart: ImagePart | null
 ): Promise<string> => {
     try {
-        if (!apiKey) {
-             throw new Error("API Key 未设置。请先登录使用系统 Key，或在设置中输入您的自定义 Key。");
-        }
-
-        const ai = getAiClient(apiKey);
         // Upgrade to pro-image-preview for high quality text rendering capabilities
         const model = "gemini-3-pro-image-preview";
 

@@ -1,0 +1,392 @@
+import React, { useState } from 'react';
+import { CoverFormData, OptimizationResult } from './types';
+import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
+import { SelectInput, TextInput, FileInput } from './components/UIComponents';
+import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
+import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture } from 'lucide-react';
+
+const App: React.FC = () => {
+  const [formData, setFormData] = useState<CoverFormData>(INITIAL_FORM_STATE);
+  const [personImage, setPersonImage] = useState<File | null>(null);
+  const [logoImage, setLogoImage] = useState<File | null>(null);
+  
+  const [status, setStatus] = useState<'idle' | 'analyzing' | 'prompt_success' | 'generating_image' | 'complete' | 'error'>('idle');
+  const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateForm = (): boolean => {
+    setErrorMsg(null);
+    if (formData.personSource === '1' && !personImage) {
+        setErrorMsg("请完成 [Q5]：您选择了使用上传照片，请上传一张真人照片。");
+        return false;
+    }
+    if (formData.logoType === '2' && !logoImage) {
+        setErrorMsg("请完成 [Q10-2]：您选择了图片 Logo，请上传 Logo 文件。");
+        return false;
+    }
+    return true;
+  };
+
+  // Step 1: Generate Prompt & Strategy
+  const handleGenerateStrategy = async () => {
+    if (!validateForm()) return;
+
+    setStatus('analyzing');
+    setOptimizationResult(null);
+    setGeneratedImage(null);
+
+    try {
+      const result = await optimizePrompt(formData);
+      setOptimizationResult(result);
+      setStatus('prompt_success');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+      setErrorMsg(err instanceof Error ? err.message : "策略生成失败");
+    }
+  };
+
+  // Step 2: Generate Image
+  const handleGenerateImage = async () => {
+    if (!optimizationResult) return;
+
+    setStatus('generating_image');
+    setErrorMsg(null);
+    
+    try {
+      let personPart: ImagePart | null = null;
+      let logoPart: ImagePart | null = null;
+
+      // Handle Person Image Source
+      if (formData.personSource === '1' && personImage) {
+        // Option 1: User Upload
+        const base64Data = await fileToGenerativePart(personImage);
+        personPart = { mimeType: personImage.type, data: base64Data };
+      } else if (formData.personSource === '3') {
+        // Option 3: Fetch Specific URL
+        try {
+            const response = await fetch(SPECIFIC_PERSON_IMAGE_URL);
+            if (!response.ok) throw new Error("Failed to load preset person image");
+            const blob = await response.blob();
+            const base64Data = await fileToGenerativePart(blob);
+            personPart = { mimeType: blob.type, data: base64Data };
+        } catch (fetchErr) {
+            console.error(fetchErr);
+            throw new Error("无法加载预设人物图片，请检查网络");
+        }
+      }
+
+      // Handle Logo Image Source
+      if (formData.logoType === '2' && logoImage) {
+        const base64Data = await fileToGenerativePart(logoImage);
+        logoPart = { mimeType: logoImage.type, data: base64Data };
+      }
+
+      const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart);
+      setGeneratedImage(imageUrl);
+      setStatus('complete');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+      setErrorMsg(err instanceof Error ? err.message : "图片生成失败");
+    }
+  };
+
+  const isProcessing = status === 'analyzing' || status === 'generating_image';
+
+  return (
+    <div className="min-h-screen bg-black relative text-slate-200 p-4 md:p-8 overflow-hidden font-sans selection:bg-purple-500/30">
+      
+      {/* High-end Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] mix-blend-screen" />
+        <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[100px] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150 contrast-150"></div>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 max-w-7xl mx-auto mb-12 flex items-center justify-between border-b border-white/5 pb-6">
+        <div className="flex items-center gap-4 group">
+            <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 blur-lg opacity-50 group-hover:opacity-100 transition-opacity rounded-full"></div>
+                <div className="relative w-12 h-12 bg-black border border-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                    <Aperture className="text-white w-7 h-7" />
+                </div>
+            </div>
+            <div>
+                <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight font-[Inter]">
+                    ViralCover <span className="text-purple-400">AI</span>
+                </h1>
+                <p className="text-xs text-slate-400 font-medium tracking-widest uppercase mt-1">
+                    Next-Gen Visual Intelligence
+                </p>
+            </div>
+        </div>
+      </header>
+
+      <main className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
+        
+        {/* Left Column: Form */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl ring-1 ring-white/5">
+             
+             <div className="space-y-10">
+                {/* Section 1: Content */}
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+                        <LayoutTemplate className="w-5 h-5 text-purple-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-300">
+                            核心文案
+                        </h2>
+                    </div>
+                    
+                    <TextInput 
+                        id="mainTitle" name="mainTitle" label="Q1. 主标题 (必填)" placeholder="输入封面主标题"
+                        value={formData.mainTitle} onChange={handleInputChange} 
+                    />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <TextInput 
+                            id="subTitle" name="subTitle" label="Q2. 副标题" placeholder="输入副标题 (可选)"
+                            value={formData.subTitle} onChange={handleInputChange} 
+                        />
+                         <SelectInput 
+                            id="promiseLevel" name="promiseLevel" label="Q3. 副标题承诺力度"
+                            options={DROPDOWN_OPTIONS.promiseLevel}
+                            value={formData.promiseLevel} onChange={handleInputChange}
+                        />
+                    </div>
+                </div>
+
+                {/* Section 2: Visual & Composition */}
+                 <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+                        <ImageIcon className="w-5 h-5 text-blue-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">
+                            视觉与构图
+                        </h2>
+                    </div>
+
+                     <div className="grid grid-cols-2 gap-4">
+                        <SelectInput 
+                            id="coverType" name="coverType" label="Q4. 封面比例/类型"
+                            options={DROPDOWN_OPTIONS.coverType}
+                            value={formData.coverType} onChange={handleInputChange}
+                        />
+                        <SelectInput 
+                            id="colorStyle" name="colorStyle" label="Q8. 色彩风格"
+                            options={DROPDOWN_OPTIONS.colorStyle}
+                            value={formData.colorStyle} onChange={handleInputChange}
+                        />
+                    </div>
+                    
+                    <SelectInput 
+                        id="backgroundElement" name="backgroundElement" label="Q9. 背景元素"
+                        options={DROPDOWN_OPTIONS.backgroundElement}
+                        value={formData.backgroundElement} onChange={handleInputChange}
+                    />
+                     <SelectInput 
+                        id="textLayout" name="textLayout" label="Q11. 文字排版"
+                        options={DROPDOWN_OPTIONS.textLayout}
+                        value={formData.textLayout} onChange={handleInputChange}
+                    />
+                 </div>
+
+                {/* Section 3: Person */}
+                <div className="space-y-6">
+                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+                        <User className="w-5 h-5 text-emerald-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-300">
+                            人物主体
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <SelectInput 
+                            id="personSource" name="personSource" label="Q5. 人物来源"
+                            options={DROPDOWN_OPTIONS.personSource}
+                            value={formData.personSource} onChange={handleInputChange}
+                        />
+                         <SelectInput 
+                            id="personPosition" name="personPosition" label="Q6. 人物位置"
+                            options={DROPDOWN_OPTIONS.personPosition}
+                            value={formData.personPosition} onChange={handleInputChange}
+                        />
+                    </div>
+                    
+                    {/* Explicit Photo Upload Area */}
+                    {formData.personSource === '1' && (
+                        <div className="bg-purple-500/10 p-4 rounded-xl border border-purple-500/30 animate-in fade-in slide-in-from-top-2">
+                            <FileInput 
+                                label="[Q5 补充] 上传真人照片 (必须上传)" 
+                                selectedFile={personImage} 
+                                onChange={setPersonImage} 
+                            />
+                            <p className="text-xs text-purple-300 mt-2 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" /> 建议: 正面或略微侧面、光线均匀的半身照
+                            </p>
+                        </div>
+                    )}
+                     {/* Preview for Preset Person */}
+                    {formData.personSource === '3' && (
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 animate-in fade-in slide-in-from-top-2 flex gap-4 items-center">
+                            <img src={SPECIFIC_PERSON_IMAGE_URL} alt="Preset Model" className="w-16 h-16 rounded-lg object-cover border border-slate-600" />
+                             <div>
+                                <p className="text-sm text-slate-300 font-medium">已选择预设人物</p>
+                                <p className="text-xs text-slate-500 mt-1">将使用系统指定的模特照片进行生成</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <SelectInput 
+                        id="expressionStrength" name="expressionStrength" label="Q7. 表情强度"
+                        options={DROPDOWN_OPTIONS.expressionStrength}
+                        value={formData.expressionStrength} onChange={handleInputChange}
+                    />
+                </div>
+
+                 {/* Section 4: Brand */}
+                 <div className="space-y-6">
+                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+                        <BadgeCheck className="w-5 h-5 text-orange-400" />
+                        <h2 className="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-amber-300">
+                            品牌元素
+                        </h2>
+                    </div>
+                    <TextInput 
+                        id="brandName" name="brandName" label="Q10-1. 品牌文本" placeholder="例如: 铁锤人"
+                        value={formData.brandName} onChange={handleInputChange} 
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                         <SelectInput 
+                            id="logoType" name="logoType" label="Q10-2. Logo 类型"
+                            options={DROPDOWN_OPTIONS.logoType}
+                            value={formData.logoType} onChange={handleInputChange}
+                        />
+                         <SelectInput 
+                            id="brandIntensity" name="brandIntensity" label="Q10-3. 露出强度"
+                            options={DROPDOWN_OPTIONS.brandIntensity}
+                            value={formData.brandIntensity} onChange={handleInputChange}
+                        />
+                    </div>
+                    
+                    {/* Explicit Logo Upload Area */}
+                    {formData.logoType === '2' && (
+                        <div className="bg-orange-500/10 p-4 rounded-xl border border-orange-500/30 animate-in fade-in slide-in-from-top-2">
+                            <FileInput 
+                                label="[Q10-2 补充] 上传 Logo 图片 (必须上传)" 
+                                selectedFile={logoImage} 
+                                onChange={setLogoImage} 
+                            />
+                            <p className="text-xs text-orange-300 mt-2">
+                                * 建议使用背景透明的 PNG 图片
+                            </p>
+                        </div>
+                    )}
+                 </div>
+
+                 {/* Section 5: Extra */}
+                 <div className="mt-8 pt-6 border-t border-white/10">
+                    <TextInput 
+                        id="specialRequirements" name="specialRequirements" label="Q12. 特殊要求 (可选)" placeholder="例如: 必须有猫，不要红色..."
+                        value={formData.specialRequirements} onChange={handleInputChange} 
+                    />
+                 </div>
+
+             </div>
+          </div>
+        </div>
+
+        {/* Right Column: Preview & Action */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+            <div className="sticky top-8">
+                <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl ring-1 ring-white/5 min-h-[600px] flex flex-col gap-6">
+                    
+                    {/* 1. Analysis */}
+                    <AnalysisSection status={status} result={optimizationResult} modelName="Gemini 2.5 Flash" />
+                    
+                    {/* 2. Prompt */}
+                    <PromptSection status={status} result={optimizationResult} />
+                    
+                    {/* 3. Button: Generate Strategy */}
+                    <button
+                        onClick={handleGenerateStrategy}
+                        disabled={isProcessing}
+                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-900/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 border
+                            ${isProcessing 
+                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' 
+                                : 'bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 border-purple-500/30 text-white'
+                            }
+                        `}
+                    >
+                        {status === 'analyzing' ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                正在分析策略...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-5 h-5" /> 1. 生成策略 & 提示词
+                            </>
+                        )}
+                    </button>
+
+                     {/* Error Message if Step 1 fails */}
+                     {status === 'error' && !optimizationResult && errorMsg && (
+                         <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-200 text-sm text-center backdrop-blur-md">
+                            {errorMsg}
+                         </div>
+                     )}
+
+                    <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
+
+                    {/* 4. Image Preview */}
+                    <ImagePreviewSection status={status} generatedImage={generatedImage} />
+
+                    {/* 5. Button: Generate Image */}
+                    <button
+                        onClick={handleGenerateImage}
+                        disabled={status === 'generating_image' || !optimizationResult}
+                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 border
+                            ${status === 'generating_image' || !optimizationResult
+                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' 
+                                : 'bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 border-emerald-500/30 text-white'
+                            }
+                        `}
+                    >
+                        {status === 'generating_image' ? (
+                            <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    AI 绘图中 (Gemini Pro Image)...
+                            </>
+                        ) : (
+                            <>
+                                <ImageIcon className="w-5 h-5" /> 2. 立即生成图片
+                            </>
+                        )}
+                    </button>
+                     
+                     {/* Error Message if Step 2 fails */}
+                     {status === 'error' && optimizationResult && errorMsg && (
+                         <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-200 text-sm text-center backdrop-blur-md">
+                            {errorMsg}
+                         </div>
+                     )}
+
+                </div>
+            </div>
+        </div>
+
+      </main>
+    </div>
+  );
+};
+
+export default App;

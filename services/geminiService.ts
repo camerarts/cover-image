@@ -28,9 +28,16 @@ export interface ImagePart {
 /**
  * Step 1: Use Gemini Flash to act as the "Meta Prompt Assistant" and generate the optimized prompt.
  */
-export const optimizePrompt = async (formData: CoverFormData): Promise<OptimizationResult> => {
+export const optimizePrompt = async (formData: CoverFormData, apiKey?: string): Promise<OptimizationResult> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Priority: Custom User Key -> System Env Key
+    const finalApiKey = apiKey || process.env.API_KEY;
+    
+    if (!finalApiKey) {
+        throw new Error("API Key is missing. Please log in or set a custom key in Settings.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: finalApiKey });
     const model = "gemini-2.5-flash";
     
     // Construct the user message based on the form data
@@ -91,10 +98,16 @@ export const optimizePrompt = async (formData: CoverFormData): Promise<Optimizat
 export const generateCoverImage = async (
     prompt: string, 
     personImagePart: ImagePart | null, 
-    logoImagePart: ImagePart | null
+    logoImagePart: ImagePart | null,
+    apiKey?: string
 ): Promise<string> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const finalApiKey = apiKey || process.env.API_KEY;
+        if (!finalApiKey) {
+            throw new Error("API Key is missing. Please log in or set a custom key in Settings.");
+        }
+
+        const ai = new GoogleGenAI({ apiKey: finalApiKey });
         // Upgrade to pro-image-preview for high quality text rendering capabilities
         const model = "gemini-3-pro-image-preview";
 

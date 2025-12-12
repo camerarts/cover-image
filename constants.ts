@@ -87,7 +87,7 @@ export const INITIAL_FORM_STATE = {
   expressionStrength: '2',
   colorStyle: '3',
   backgroundElement: '1',
-  brandName: '铁锤人',
+  brandName: '',
   logoType: '1',
   brandIntensity: '2',
   textLayout: '1',

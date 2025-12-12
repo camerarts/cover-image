@@ -25,13 +25,12 @@ export interface ImagePart {
     data: string;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 /**
  * Step 1: Use Gemini Flash to act as the "Meta Prompt Assistant" and generate the optimized prompt.
  */
 export const optimizePrompt = async (formData: CoverFormData): Promise<OptimizationResult> => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const model = "gemini-2.5-flash";
     
     // Construct the user message based on the form data
@@ -95,6 +94,7 @@ export const generateCoverImage = async (
     logoImagePart: ImagePart | null
 ): Promise<string> => {
     try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         // Upgrade to pro-image-preview for high quality text rendering capabilities
         const model = "gemini-3-pro-image-preview";
 

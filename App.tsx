@@ -157,8 +157,8 @@ const App: React.FC = () => {
 
       <main className="relative z-10 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20">
         
-        {/* Left Column: Input Grid (Bento Style) */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
+        {/* Left Column: Input Grid (Bento Style) - Changed to col-span-6 (50%) */}
+        <div className="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
             
             {/* 1. Content (Wide) */}
             <BentoCard 
@@ -307,8 +307,8 @@ const App: React.FC = () => {
 
         </div>
 
-        {/* Right Column: Sticky Output (Stacked Bento) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        {/* Right Column: Sticky Output (Stacked Bento) - Changed to col-span-6 (50%) */}
+        <div className="lg:col-span-6 flex flex-col gap-6">
             <div className="lg:sticky lg:top-8 space-y-6">
                 
                 {/* 1. Results Card */}

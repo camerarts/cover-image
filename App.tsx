@@ -4,7 +4,7 @@ import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from 
 import { SelectInput, TextInput, FileInput } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Lock, Key } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Lock, Key, Code2, Copy } from 'lucide-react';
 
 // Local BentoCard Component for layout consistency
 const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { children: React.ReactNode, className?: string, title?: string, icon?: any, gradient?: string }) => (
@@ -36,6 +36,7 @@ const App: React.FC = () => {
   // Auth & Settings State
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showApiModal, setShowApiModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [customApiKey, setCustomApiKey] = useState('');
@@ -200,6 +201,14 @@ const App: React.FC = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
+             <button
+                onClick={() => setShowApiModal(true)}
+                className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                title="API 文档"
+             >
+                <Code2 className="w-5 h-5" />
+             </button>
+
              <button
                 onClick={() => setShowSettingsModal(true)}
                 className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
@@ -525,6 +534,93 @@ const App: React.FC = () => {
                         className="w-full bg-white text-slate-900 hover:bg-slate-200 font-bold py-3 rounded-lg transition-colors"
                     >
                         保存并关闭
+                    </button>
+                </div>
+             </div>
+        </div>
+      )}
+
+      {/* API Documentation Modal */}
+      {showApiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative">
+                <div className="flex items-center justify-between p-6 border-b border-slate-800">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                            <Code2 className="w-6 h-6 text-blue-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-white">API 调用文档</h2>
+                            <p className="text-sm text-slate-400">通过 HTTP 请求自动化生成封面</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setShowApiModal(false)} className="text-slate-500 hover:text-white">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-300">接口地址 (Endpoint)</label>
+                        <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 font-mono text-sm text-emerald-400 flex items-center justify-between">
+                            <span>{window.location.origin}/api/generate</span>
+                            <span className="text-slate-600 text-xs px-2 py-1 bg-slate-900 rounded border border-slate-800">POST</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-300">请求参数 (JSON Body)</label>
+                        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-sm text-slate-300">
+<pre>{`{
+  "mainTitle": "你的主标题",  // 必填
+  "subTitle": "你的副标题",   // 可选
+  "apiKey": "sk-..."        // 可选 (若服务器未配置 Env Key)
+}`}</pre>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                            * 注意：调用 API 时系统会自动采用「YouTube 16:9 + AI 人物 + 高点击率」的默认最佳配置。
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-300">调用示例 (cURL)</label>
+                        <div className="relative group bg-slate-950 border border-slate-800 rounded-lg p-4">
+                            <pre className="font-mono text-xs text-blue-300 overflow-x-auto">
+{`curl -X POST ${window.location.origin}/api/generate \\
+-H "Content-Type: application/json" \\
+-d '{
+  "mainTitle": "AI 自动化教程",
+  "subTitle": "一键生成视频封面"
+}'`}
+                            </pre>
+                             <button 
+                                onClick={() => navigator.clipboard.writeText(`curl -X POST ${window.location.origin}/api/generate -H "Content-Type: application/json" -d '{"mainTitle": "测试标题", "subTitle": "测试副标题"}'`)}
+                                className="absolute top-2 right-2 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded transition-colors"
+                            >
+                                <Copy className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-300">返回结果 (Response)</label>
+                        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-xs text-emerald-300 overflow-hidden">
+<pre>{`{
+  "success": true,
+  "mainTitle": "AI 自动化教程",
+  "imageUrl": "data:image/png;base64,iVBORw0KGgo...",
+  "strategy": { ... }
+}`}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-4 border-t border-slate-800 bg-slate-900/50 rounded-b-2xl">
+                    <button 
+                        onClick={() => setShowApiModal(false)}
+                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-colors"
+                    >
+                        关闭
                     </button>
                 </div>
              </div>

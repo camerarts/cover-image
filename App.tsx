@@ -23,6 +23,19 @@ const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { 
     </div>
 );
 
+// Helper to translate errors to Chinese
+const translateError = (err: any): string => {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("API Key is missing")) return "API Key 缺失，请先登录或在设置中配置自定义 Key。";
+    if (msg.includes("403") || msg.includes("permission denied")) return "API Key 权限不足或无效 (403)，请检查您的 Key。";
+    if (msg.includes("429")) return "请求过于频繁，触发限流，请稍后再试 (429)。";
+    if (msg.includes("500") || msg.includes("503")) return "AI 服务暂时不可用，请稍后重试 (5xx)。";
+    if (msg.includes("fetch failed") || msg.includes("NetworkError") || msg.includes("Load failed")) return "网络连接失败，请检查您的网络设置 (需可访问 Google API)。";
+    if (msg.includes("SAFETY")) return "生成内容触犯安全策略被拦截，请调整提示词或输入内容。";
+    if (msg.includes("candidate")) return "模型未能生成有效内容，请重试。";
+    return `生成出错: ${msg}`; 
+};
+
 const App: React.FC = () => {
   const [formData, setFormData] = useState<CoverFormData>(INITIAL_FORM_STATE);
   const [personImage, setPersonImage] = useState<File | null>(null);
@@ -116,7 +129,7 @@ const App: React.FC = () => {
     } catch (err) {
       console.error(err);
       setStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : "策略生成失败");
+      setErrorMsg(translateError(err));
     }
   };
 
@@ -166,7 +179,7 @@ const App: React.FC = () => {
     } catch (err) {
       console.error(err);
       setStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : "图片生成失败");
+      setErrorMsg(translateError(err));
     }
   };
 
@@ -193,21 +206,25 @@ const App: React.FC = () => {
                 </div>
             </div>
             <div>
-                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight font-[Inter]">
-                    ViralCover <span className="text-purple-400">AI</span>
+                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight font-[Inter] flex items-center gap-3">
+                    <span>ViralCover <span className="text-purple-400">AI</span></span>
+                    <span className="hidden sm:block w-px h-6 bg-white/10 mx-1"></span>
+                    <span className="hidden sm:block text-lg font-bold text-slate-400 tracking-normal">爆款视频封面生成器</span>
                 </h1>
             </div>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-             <button
-                onClick={() => setShowApiModal(true)}
-                className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
-                title="API 文档"
-             >
-                <Code2 className="w-5 h-5" />
-             </button>
+             {isLoggedIn && (
+                 <button
+                    onClick={() => setShowApiModal(true)}
+                    className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                    title="API 文档"
+                 >
+                    <Code2 className="w-5 h-5" />
+                 </button>
+             )}
 
              <button
                 onClick={() => setShowSettingsModal(true)}
@@ -518,9 +535,20 @@ const App: React.FC = () => {
                     <p className="text-sm text-slate-400 mt-1">使用您自己的 Gemini API Key (可选)</p>
                 </div>
                 <div className="space-y-4">
-                    <div className="bg-slate-800/50 p-4 rounded-lg text-sm text-slate-400 border border-slate-700/50">
-                        <p className="mb-2">如果您未登录管理员账号，则必须在此输入您自己的 Key 才能使用。</p>
-                        <p>该 Key 仅保存在当前会话中，刷新页面后会重置。</p>
+                    <div className="bg-slate-800/50 p-4 rounded-lg text-sm border border-slate-700/50 space-y-3">
+                        <div>
+                            <p className="text-slate-400 mb-2">模型使用说明：</p>
+                            <div className="flex justify-between items-center text-xs mb-1">
+                                <span className="text-slate-300">1. 策略分析 & Prompt</span>
+                                <span className="font-mono text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded">Gemini 2.5 Flash</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-300">2. 高清绘图 (16:9)</span>
+                                <span className="font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">Gemini 3 Pro Image</span>
+                            </div>
+                        </div>
+                        <div className="h-px bg-white/5"></div>
+                        <p className="text-slate-500 text-xs">如果您未登录管理员账号，则必须在此输入您自己的 Key 才能使用。该 Key 仅保存在当前会话中。</p>
                     </div>
                     <input 
                         type="password"

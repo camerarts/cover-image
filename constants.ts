@@ -1,3 +1,4 @@
+
 export const SYSTEM_INSTRUCTION = `
 You are a "Cover Image Meta Prompt Abstract Assistant". Your goal is to take user inputs and structured data to generate a professional, high-click-through rate image generation prompt.
 
@@ -80,7 +81,7 @@ export const INITIAL_FORM_STATE = {
   mainTitle: '如何生成大量图片的提示词',
   subTitle: '获取百万流量',
   promiseLevel: '2',
-  coverType: '1',
+  coverType: '2', // Default to YouTube Thumbnail
   personSource: '2', // Default to AI for easier start
   personPosition: '2',
   expressionStrength: '2',

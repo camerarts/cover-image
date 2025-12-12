@@ -313,7 +313,7 @@ const App: React.FC = () => {
                     <AnalysisSection status={status} result={optimizationResult} modelName="Gemini 2.5 Flash" />
                     
                     {/* 2. Prompt */}
-                    <PromptSection status={status} result={optimizationResult} />
+                    <PromptSection status={status} result={optimizationResult} modelName="Gemini 2.5 Flash" />
                     
                     {/* 3. Button: Generate Strategy */}
                     <button
@@ -348,7 +348,7 @@ const App: React.FC = () => {
                     <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
 
                     {/* 4. Image Preview */}
-                    <ImagePreviewSection status={status} generatedImage={generatedImage} />
+                    <ImagePreviewSection status={status} generatedImage={generatedImage} modelName="Gemini 3 Pro Image" />
 
                     {/* 5. Button: Generate Image */}
                     <button

@@ -2,10 +2,10 @@
 import React, { useState, useEffect, Component, ErrorInfo } from 'react';
 import { CoverFormData, OptimizationResult } from './types';
 import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
-import { SelectInput, TextInput, FileInput, Label } from './components/UIComponents';
+import { SelectInput, TextInput, TextArea, FileInput, Label } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-import { Sparkles, Image as ImageIcon, LayoutTemplate, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock, AlertTriangle } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock, AlertTriangle, MessageSquare } from 'lucide-react';
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -146,7 +146,7 @@ const AppContent: React.FC = () => {
       localStorage.setItem('app-theme', newTheme);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -517,6 +517,19 @@ const AppContent: React.FC = () => {
                     </div>
                 )}
              </BentoCard>
+
+            {/* 5. Special Requirements (Wide) */}
+            <BentoCard 
+                title="其他要求" 
+                icon={MessageSquare} 
+                className="md:col-span-2"
+                gradient="from-pink-500/10 to-transparent dark:from-pink-500/20"
+            >
+                <TextArea 
+                    id="specialRequirements" name="specialRequirements" label="Q12. 其他特殊要求 (可选)" placeholder="例如：禁止使用绿色，整体风格要赛博朋克..."
+                    value={formData.specialRequirements} onChange={handleInputChange}
+                />
+            </BentoCard>
 
             {/* Action Buttons */}
             <div className="md:col-span-2 flex flex-col gap-3">

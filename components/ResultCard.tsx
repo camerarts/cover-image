@@ -231,4 +231,3 @@ export const ImagePreviewSection: React.FC<{
         </div>
     )
 }
-

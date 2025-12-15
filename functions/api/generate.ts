@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Duplicate constants to ensure standalone execution in Edge environment
@@ -13,7 +14,7 @@ Your Output MUST be a JSON object with the following keys:
 - "parameterSummary": A concise summary of the interpreted parameters in Chinese.
 - "finalPrompt": The highly detailed, English image generation prompt optimized for a model like Gemini or Midjourney.
 - "chinesePrompt": A direct translation of the "finalPrompt" into Chinese, capturing the same descriptive details and style keywords.
-- "analysis": A brief explanation of why you chose this composition.
+- "analysis": A brief explanation of why you chose this composition in Chinese.
 
 Follow these design principles:
 - Text legibility is priority #1.

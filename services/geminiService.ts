@@ -44,15 +44,18 @@ const cleanJsonString = (str: string): string => {
 // Safe way to get API Key without crashing if process is undefined
 const getApiKeySafe = (userKey?: string): string => {
     if (userKey) return userKey;
+    
+    // In Vite, process.env.API_KEY is replaced by the actual string value at build time.
+    // We must access it directly without checking 'process' existence first, 
+    // because 'process' is undefined in the browser, but the replacement still happens.
     try {
         // @ts-ignore
-        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-            // @ts-ignore
-            return process.env.API_KEY;
-        }
+        const envKey = process.env.API_KEY;
+        if (envKey) return envKey;
     } catch (e) {
-        console.warn("Accessing process.env failed", e);
+        // Ignore errors if replacement didn't happen
     }
+    
     return "";
 };
 
@@ -199,3 +202,4 @@ export const generateCoverImage = async (
         throw error;
     }
 };
+

@@ -480,6 +480,19 @@ const AppContent: React.FC = () => {
                             />
                         </div>
                     )}
+                    {formData.personSource === '3' && (
+                        <div className="bg-blue-500/5 dark:bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 dark:border-blue-500/30 flex flex-col items-center text-center mt-3">
+                             <Label>已选择: 预设模特 (Q5)</Label>
+                             <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm mt-2">
+                                <img 
+                                    src={SPECIFIC_PERSON_IMAGE_URL} 
+                                    alt="Preset Model" 
+                                    className="w-full h-full object-cover"
+                                />
+                             </div>
+                             <p className="text-xs text-slate-500 mt-2">将使用此人物作为参考</p>
+                        </div>
+                    )}
                 </div>
              </BentoCard>
 

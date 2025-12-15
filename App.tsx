@@ -211,6 +211,7 @@ const AppContent: React.FC = () => {
     }
 
     try {
+        // Update states individually to avoid batching issues causing DOM race conditions
         setStatus('analyzing');
         setOptimizationResult(null);
         setGeneratedImage(null);
@@ -531,8 +532,12 @@ const AppContent: React.FC = () => {
                     disabled={isProcessing}
                     className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group"
                  >
-                    {status === 'analyzing' ? <LoadingSpinner className="w-5 h-5" /> : <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                    {status === 'analyzing' ? 'AI 正在深度分析策略...' : '✨ 生成爆款策略 & Prompt'}
+                    <span className="shrink-0">
+                        {status === 'analyzing' ? <LoadingSpinner className="w-5 h-5" /> : <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                    </span>
+                    <span>
+                        {status === 'analyzing' ? 'AI 正在深度分析策略...' : '✨ 生成爆款策略 & Prompt'}
+                    </span>
                  </button>
                  
                  {optimizationResult && (
@@ -541,8 +546,12 @@ const AppContent: React.FC = () => {
                         disabled={status === 'generating_image'}
                         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
                      >
-                         {status === 'generating_image' ? <LoadingSpinner className="w-5 h-5" /> : <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                         {status === 'generating_image' ? '正在绘制高清封面 (约10秒)...' : '🎨 开始绘制最终封面图'}
+                         <span className="shrink-0">
+                            {status === 'generating_image' ? <LoadingSpinner className="w-5 h-5" /> : <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                         </span>
+                         <span>
+                            {status === 'generating_image' ? '正在绘制高清封面 (约10秒)...' : '🎨 开始绘制最终封面图'}
+                         </span>
                      </button>
                  )}
             </div>

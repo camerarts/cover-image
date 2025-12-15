@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 import { CoverFormData, OptimizationResult } from "../types";
@@ -24,6 +25,14 @@ export interface ImagePart {
     mimeType: string;
     data: string;
 }
+
+// Helper to clean JSON string (remove markdown code blocks)
+const cleanJsonString = (str: string): string => {
+  if (!str) return "{}";
+  // Remove ```json and ```
+  let cleaned = str.replace(/```json/g, "").replace(/```/g, "");
+  return cleaned.trim();
+};
 
 /**
  * Step 1: Use Gemini Flash to act as the "Meta Prompt Assistant" and generate the optimized prompt.
@@ -82,7 +91,7 @@ export const optimizePrompt = async (formData: CoverFormData, apiKey?: string): 
     });
 
     if (response.text) {
-        return JSON.parse(response.text) as OptimizationResult;
+        return JSON.parse(cleanJsonString(response.text)) as OptimizationResult;
     }
     throw new Error("Empty response from AI");
 

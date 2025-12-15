@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { CoverFormData, OptimizationResult } from './types';
 import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
-import { SelectInput, TextInput, FileInput } from './components/UIComponents';
+import { SelectInput, TextInput, FileInput, Label } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
 import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Lock, Key, Code2, Copy } from 'lucide-react';
 
 // Local BentoCard Component for layout consistency
-const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { children: React.ReactNode, className?: string, title?: string, icon?: any, gradient?: string }) => (
+const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { children?: React.ReactNode, className?: string, title?: string, icon?: any, gradient?: string }) => (
     <div className={`bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 shadow-xl ring-1 ring-white/5 flex flex-col ${className}`}>
         {title && (
             <div className={`flex items-center gap-3 mb-6 p-3 rounded-xl bg-gradient-to-r ${gradient || 'from-slate-800 to-transparent'} border-l-4 border-white/20`}>
@@ -345,315 +346,183 @@ const App: React.FC = () => {
                     </div>
                     
                     {formData.personSource === '1' && (
-                        <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20">
+                        <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30 flex flex-col items-center text-center">
+                            <Label>已选择: 上传照片 (Q5)</Label>
                             <FileInput 
-                                label="上传真人照片" 
-                                selectedFile={personImage} 
-                                onChange={setPersonImage} 
+                                label="点击上传真人照片" 
+                                selectedFile={personImage}
+                                onChange={setPersonImage}
                             />
                         </div>
-                    )}
-                    {formData.personSource === '3' && (
-                         <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
-                             <img src={SPECIFIC_PERSON_IMAGE_URL} alt="Preset" className="w-10 h-10 rounded-md object-cover" />
-                             <span className="text-xs text-slate-400">已选用预设模特</span>
-                         </div>
                     )}
                 </div>
              </BentoCard>
 
-            {/* 4. Brand (Wide) */}
-            <BentoCard 
-                title="品牌元素 & 其他" 
+             {/* 4. Brand (Wide) */}
+             <BentoCard 
+                title="品牌与标识" 
                 icon={BadgeCheck} 
                 className="md:col-span-2"
-                gradient="from-orange-500/20 to-transparent"
-            >
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <TextInput 
-                            id="brandName" name="brandName" label="Q10-1. 品牌文本"
-                            value={formData.brandName} onChange={handleInputChange}
-                            onPasteClick={() => handlePaste('brandName')}
-                        />
-                         <SelectInput 
-                            id="logoType" name="logoType" label="Q10-2. Logo 类型"
-                            options={DROPDOWN_OPTIONS.logoType}
-                            value={formData.logoType} onChange={handleInputChange}
-                        />
-                        <SelectInput 
-                            id="brandIntensity" name="brandIntensity" label="Q10-3. 露出强度"
-                            options={DROPDOWN_OPTIONS.brandIntensity}
-                            value={formData.brandIntensity} onChange={handleInputChange}
-                        />
-                    </div>
-                     {formData.logoType === '2' && (
-                        <div className="bg-orange-500/10 p-4 rounded-xl border border-orange-500/30">
-                            <FileInput 
-                                label="上传 Logo 图片" 
-                                selectedFile={logoImage} 
-                                onChange={setLogoImage} 
-                            />
-                        </div>
-                    )}
+                gradient="from-amber-500/20 to-transparent"
+             >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <TextInput 
-                        id="specialRequirements" name="specialRequirements" label="Q12. 特殊要求 (可选)" placeholder="例如: 必须有猫..."
-                        value={formData.specialRequirements} onChange={handleInputChange} 
-                        onPasteClick={() => handlePaste('specialRequirements')}
+                        id="brandName" name="brandName" label="Q10. 品牌名称" placeholder="无"
+                        value={formData.brandName} onChange={handleInputChange} 
+                    />
+                    <SelectInput 
+                        id="logoType" name="logoType" label="Q10-2. Logo 类型"
+                        options={DROPDOWN_OPTIONS.logoType}
+                        value={formData.logoType} onChange={handleInputChange}
+                    />
+                     <SelectInput 
+                        id="brandIntensity" name="brandIntensity" label="Q10-3. 品牌露出程度"
+                        options={DROPDOWN_OPTIONS.brandIntensity}
+                        value={formData.brandIntensity} onChange={handleInputChange}
                     />
                 </div>
-            </BentoCard>
+                {formData.logoType === '2' && (
+                    <div className="mt-4 p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                         <Label>上传 Logo 图片</Label>
+                         <FileInput 
+                            label="上传 Logo 图片" 
+                            selectedFile={logoImage}
+                            onChange={setLogoImage}
+                        />
+                    </div>
+                )}
+             </BentoCard>
 
-        </div>
+            {/* Action Buttons */}
+            <div className="md:col-span-2 flex flex-col gap-3">
+                 {errorMsg && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400 text-sm animate-in fade-in slide-in-from-top-2">
+                        <X className="w-4 h-4 shrink-0" />
+                        <span>{errorMsg}</span>
+                    </div>
+                 )}
 
-        {/* Right Column: Sticky Output (Stacked Bento) - 50% */}
-        <div className="lg:col-span-6 flex flex-col gap-6">
-            <div className="lg:sticky lg:top-8 space-y-6">
-                
-                {/* 1. Results Card */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 shadow-xl ring-1 ring-white/5 flex flex-col gap-6">
-                    
-                    <AnalysisSection status={status} result={optimizationResult} modelName="Gemini 2.5 Flash" />
-                    
-                    <div className="h-px bg-white/5" />
-                    
-                    <PromptSection status={status} result={optimizationResult} modelName="Gemini 2.5 Flash" />
-                    
-                    <button
-                        onClick={handleGenerateStrategy}
-                        disabled={isProcessing}
-                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-purple-900/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 border
-                            ${isProcessing 
-                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' 
-                                : 'bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 border-purple-500/30 text-white'
-                            }
-                        `}
-                    >
-                        {status === 'analyzing' ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                正在分析...
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="w-5 h-5" /> 1. 生成策略
-                            </>
-                        )}
-                    </button>
-
-                     {status === 'error' && !optimizationResult && errorMsg && (
-                         <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-200 text-xs text-center">
-                            {errorMsg}
-                         </div>
-                     )}
-                </div>
-
-                {/* 2. Preview Card */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 shadow-xl ring-1 ring-white/5 flex flex-col gap-6">
-                    <ImagePreviewSection status={status} generatedImage={generatedImage} modelName="Gemini 3 Pro Image" />
-
-                    <button
+                 <button
+                    onClick={handleGenerateStrategy}
+                    disabled={isProcessing}
+                    className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group"
+                 >
+                    {status === 'analyzing' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                    {status === 'analyzing' ? 'AI 正在深度分析策略...' : '✨ 生成爆款策略 & Prompt'}
+                 </button>
+                 
+                 {optimizationResult && (
+                     <button
                         onClick={handleGenerateImage}
-                        disabled={status === 'generating_image' || !optimizationResult}
-                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 border
-                            ${status === 'generating_image' || !optimizationResult
-                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' 
-                                : 'bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 border-emerald-500/30 text-white'
-                            }
-                        `}
-                    >
-                        {status === 'generating_image' ? (
-                            <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    绘图中...
-                            </>
-                        ) : (
-                            <>
-                                <ImageIcon className="w-5 h-5" /> 2. 生成图片
-                            </>
-                        )}
-                    </button>
-
-                     {status === 'error' && optimizationResult && errorMsg && (
-                         <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-200 text-xs text-center">
-                            {errorMsg}
-                         </div>
-                     )}
-                </div>
-
+                        disabled={status === 'generating_image'}
+                        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
+                     >
+                         {status === 'generating_image' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                         {status === 'generating_image' ? '正在绘制高清封面 (约10秒)...' : '🎨 开始绘制最终封面图'}
+                     </button>
+                 )}
             </div>
         </div>
 
+        {/* Right Column: Results - 50% */}
+        <div className="lg:col-span-6 flex flex-col gap-6">
+            <BentoCard title="AI 生成结果" icon={Sparkles} className="h-full min-h-[500px]" gradient="from-purple-600/20 to-transparent">
+                 <div className="space-y-8">
+                     <AnalysisSection status={status} result={optimizationResult} />
+                     <PromptSection status={status} result={optimizationResult} />
+                     <ImagePreviewSection status={status} generatedImage={generatedImage} />
+                 </div>
+            </BentoCard>
+        </div>
+
       </main>
-    
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Settings className="w-5 h-5" /> API Key 设置
+                    </h3>
+                    <button onClick={() => setShowSettingsModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-white" /></button>
+                </div>
+
+                <div className="space-y-4">
+                     {/* Model Usage Info Block */}
+                     <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">模型使用说明</h4>
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-300">1. 策略分析 & Prompt</span>
+                                <span className="text-xs font-mono px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">Gemini 2.5 Flash</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-slate-300">2. 高清绘图 (16:9)</span>
+                                <span className="text-xs font-mono px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">Gemini 3 Pro Image</span>
+                            </div>
+                        </div>
+                     </div>
+
+                    <div>
+                        <Label htmlFor="customApiKey">自定义 Google API Key (可选)</Label>
+                        <div className="relative">
+                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input 
+                                id="customApiKey"
+                                type="password" 
+                                placeholder="sk-..." 
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                                value={customApiKey}
+                                onChange={(e) => setCustomApiKey(e.target.value)}
+                            />
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">
+                            如果您有自己的 Gemini API Key，可在此填入。留空则尝试使用系统默认 Key (需登录)。
+                        </p>
+                    </div>
+
+                    <button 
+                        onClick={() => setShowSettingsModal(false)}
+                        className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-colors"
+                    >
+                        保存并关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
-                <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
-                    <X className="w-5 h-5" />
-                </button>
-                <div className="flex flex-col items-center mb-6">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mb-3">
-                        <Lock className="w-6 h-6 text-purple-400" />
-                    </div>
-                    <h2 className="text-xl font-bold text-white">管理员登录</h2>
-                    <p className="text-sm text-slate-400 mt-1">输入密码以使用后台 API Key</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+                 <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Lock className="w-5 h-5" /> 管理员登录
+                    </h3>
+                    <button onClick={() => setShowLoginModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-white" /></button>
                 </div>
                 <div className="space-y-4">
                     <input 
-                        type="password"
-                        placeholder="请输入密码"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                        type="password" 
+                        placeholder="输入访问密码" 
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none text-center tracking-widest"
                         value={passwordInput}
                         onChange={(e) => setPasswordInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                     />
                     <button 
                         onClick={handleLogin}
-                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-colors"
+                        className="w-full py-2.5 bg-white text-black font-bold rounded-lg hover:bg-slate-200 transition-colors"
                     >
-                        确认登录
+                        验证
                     </button>
                 </div>
              </div>
         </div>
       )}
 
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-                <button onClick={() => setShowSettingsModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
-                    <X className="w-5 h-5" />
-                </button>
-                <div className="flex flex-col items-center mb-6">
-                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3 border border-slate-700">
-                        <Key className="w-6 h-6 text-slate-400" />
-                    </div>
-                    <h2 className="text-xl font-bold text-white">API Key 设置</h2>
-                    <p className="text-sm text-slate-400 mt-1">使用您自己的 Gemini API Key (可选)</p>
-                </div>
-                <div className="space-y-4">
-                    <div className="bg-slate-800/50 p-4 rounded-lg text-sm border border-slate-700/50 space-y-3">
-                        <div>
-                            <p className="text-slate-400 mb-2">模型使用说明：</p>
-                            <div className="flex justify-between items-center text-xs mb-1">
-                                <span className="text-slate-300">1. 策略分析 & Prompt</span>
-                                <span className="font-mono text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded">Gemini 2.5 Flash</span>
-                            </div>
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="text-slate-300">2. 高清绘图 (16:9)</span>
-                                <span className="font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">Gemini 3 Pro Image</span>
-                            </div>
-                        </div>
-                        <div className="h-px bg-white/5"></div>
-                        <p className="text-slate-500 text-xs">如果您未登录管理员账号，则必须在此输入您自己的 Key 才能使用。该 Key 仅保存在当前会话中。</p>
-                    </div>
-                    <input 
-                        type="password"
-                        placeholder="sk-..."
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-slate-500 outline-none font-mono"
-                        value={customApiKey}
-                        onChange={(e) => setCustomApiKey(e.target.value)}
-                    />
-                    <button 
-                        onClick={() => setShowSettingsModal(false)}
-                        className="w-full bg-white text-slate-900 hover:bg-slate-200 font-bold py-3 rounded-lg transition-colors"
-                    >
-                        保存并关闭
-                    </button>
-                </div>
-             </div>
-        </div>
-      )}
-
-      {/* API Documentation Modal */}
-      {showApiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative">
-                <div className="flex items-center justify-between p-6 border-b border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                            <Code2 className="w-6 h-6 text-blue-400" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-white">API 调用文档</h2>
-                            <p className="text-sm text-slate-400">通过 HTTP 请求自动化生成封面</p>
-                        </div>
-                    </div>
-                    <button onClick={() => setShowApiModal(false)} className="text-slate-500 hover:text-white">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-                
-                <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-300">接口地址 (Endpoint)</label>
-                        <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 font-mono text-sm text-emerald-400 flex items-center justify-between">
-                            <span>{window.location.origin}/api/generate</span>
-                            <span className="text-slate-600 text-xs px-2 py-1 bg-slate-900 rounded border border-slate-800">POST</span>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-300">请求参数 (JSON Body)</label>
-                        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-sm text-slate-300">
-<pre>{`{
-  "mainTitle": "你的主标题",  // 必填
-  "subTitle": "你的副标题"    // 可选
-}`}</pre>
-                        </div>
-                        <p className="text-xs text-slate-500">
-                            * 注意：调用 API 时系统会自动采用「YouTube 16:9 + AI 人物 + 高点击率」的默认最佳配置。
-                        </p>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-300">调用示例 (cURL)</label>
-                        <div className="relative group bg-slate-950 border border-slate-800 rounded-lg p-4">
-                            <pre className="font-mono text-xs text-blue-300 overflow-x-auto">
-{`curl -X POST ${window.location.origin}/api/generate \\
--H "Content-Type: application/json" \\
--d '{
-  "mainTitle": "AI 自动化教程",
-  "subTitle": "一键生成视频封面"
-}'`}
-                            </pre>
-                             <button 
-                                onClick={() => navigator.clipboard.writeText(`curl -X POST ${window.location.origin}/api/generate -H "Content-Type: application/json" -d '{"mainTitle": "测试标题", "subTitle": "测试副标题"}'`)}
-                                className="absolute top-2 right-2 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded transition-colors"
-                            >
-                                <Copy className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-300">返回结果 (Response)</label>
-                        <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-xs text-emerald-300 overflow-hidden">
-<pre>{`{
-  "success": true,
-  "mainTitle": "AI 自动化教程",
-  "imageUrl": "data:image/png;base64,iVBORw0KGgo...",
-  "strategy": { ... }
-}`}</pre>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-4 border-t border-slate-800 bg-slate-900/50 rounded-b-2xl">
-                    <button 
-                        onClick={() => setShowApiModal(false)}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-colors"
-                    >
-                        关闭
-                    </button>
-                </div>
-             </div>
-        </div>
-      )}
-      
     </div>
   );
 };

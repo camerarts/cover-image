@@ -8,19 +8,20 @@ export interface ImagePart {
 }
 
 // 注意：小程序直接调用 Google API 会因为域名不在白名单而失败。
-// 建议：将此处的 URL 改为你的 Cloudflare Worker 地址，或者在开发工具中开启“不校验合法域名”。
+// 建议：在开发工具详情中勾选“不校验合法域名、web-view（业务域名）、TLS版本以及HTTPS证书”
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Helper to clean JSON string (remove markdown code blocks)
 const cleanJsonString = (str: string): string => {
   if (!str) return "{}";
-  // Remove ```json and ```
+  // Remove markdown code blocks like ```json ... ```
   let cleaned = str.replace(/```json/g, "").replace(/```/g, "");
+  // Remove any leading/trailing whitespace
   return cleaned.trim();
 };
 
 export const optimizePrompt = async (formData: any, apiKey: string): Promise<any> => {
-  if (!apiKey) throw new Error("API Key is missing");
+  if (!apiKey) throw new Error("API Key 未设置，请在设置中配置");
 
   const userPrompt = `
     Analyze the following cover request and generate the optimized prompt:
@@ -60,13 +61,18 @@ export const optimizePrompt = async (formData: any, apiKey: string): Promise<any
       }
     });
 
+    // 安全检查 response.data
     if (response.statusCode !== 200) {
-        throw new Error(`API Error: ${response.data.error?.message || response.statusCode}`);
+        let errMsg = `Status ${response.statusCode}`;
+        if (response.data && typeof response.data === 'object' && (response.data as any).error) {
+             errMsg = (response.data as any).error.message || errMsg;
+        }
+        throw new Error(`API Error: ${errMsg}`);
     }
 
     const candidate = response.data.candidates?.[0];
     if (!candidate) {
-        throw new Error("模型未返回任何候选项 (Blocked by safety filters?)");
+        throw new Error("模型未返回内容 (可能被安全策略拦截)");
     }
 
     const text = candidate.content?.parts?.[0]?.text;
@@ -75,16 +81,18 @@ export const optimizePrompt = async (formData: any, apiKey: string): Promise<any
     }
 
     try {
-        return JSON.parse(cleanJsonString(text));
+        const parsed = JSON.parse(cleanJsonString(text));
+        // 简单的结构检查
+        if (!parsed.finalPrompt) throw new Error("返回数据缺失 finalPrompt");
+        return parsed;
     } catch (e) {
-        console.error("JSON Parse Error", text);
-        throw new Error("解析 AI 返回的数据失败");
+        console.error("JSON Parse Error Raw Text:", text);
+        throw new Error("解析 AI 返回的数据失败，请重试");
     }
 
   } catch (error: any) {
     console.error("Optimize Error Details:", error);
-    // Re-throw with a user-friendly message
-    throw new Error(error.message || "请求 AI 服务失败，请检查网络或 API Key");
+    throw new Error(error.message || "请求失败，请检查网络 (需科学环境或代理)");
   }
 };
 
@@ -115,14 +123,17 @@ export const generateCoverImage = async (
             data: {
                 contents: [{ parts }],
                 generationConfig: {
-                    // Note: imageConfig format varies slightly in REST vs SDK
                     responseMimeType: "image/png" 
                 }
             }
         });
 
         if (response.statusCode !== 200) {
-             throw new Error(`API Error: ${response.data.error?.message || response.statusCode}`);
+             let errMsg = `Status ${response.statusCode}`;
+             if (response.data && typeof response.data === 'object' && (response.data as any).error) {
+                  errMsg = (response.data as any).error.message || errMsg;
+             }
+             throw new Error(`API Error: ${errMsg}`);
         }
 
         const generatedPart = response.data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);

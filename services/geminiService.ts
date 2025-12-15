@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 import { CoverFormData, OptimizationResult } from "../types";
 
@@ -26,12 +26,34 @@ export interface ImagePart {
     data: string;
 }
 
-// Helper to clean JSON string (remove markdown code blocks)
+// Robust JSON Cleaner
 const cleanJsonString = (str: string): string => {
   if (!str) return "{}";
-  // Remove ```json and ```
-  let cleaned = str.replace(/```json/g, "").replace(/```/g, "");
-  return cleaned.trim();
+  try {
+      // 1. Try to find the first '{' and last '}'
+      const match = str.match(/\{[\s\S]*\}/);
+      if (match) {
+          return match[0];
+      }
+      return str;
+  } catch (e) {
+      return str;
+  }
+};
+
+// Safe way to get API Key without crashing if process is undefined
+const getApiKeySafe = (userKey?: string): string => {
+    if (userKey) return userKey;
+    try {
+        // @ts-ignore
+        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+            // @ts-ignore
+            return process.env.API_KEY;
+        }
+    } catch (e) {
+        console.warn("Accessing process.env failed", e);
+    }
+    return "";
 };
 
 /**
@@ -39,8 +61,7 @@ const cleanJsonString = (str: string): string => {
  */
 export const optimizePrompt = async (formData: CoverFormData, apiKey?: string): Promise<OptimizationResult> => {
   try {
-    // Priority: Custom User Key -> System Env Key
-    const finalApiKey = apiKey || process.env.API_KEY;
+    const finalApiKey = getApiKeySafe(apiKey);
     
     if (!finalApiKey) {
         throw new Error("API Key is missing. Please log in or set a custom key in Settings.");
@@ -71,6 +92,7 @@ export const optimizePrompt = async (formData: CoverFormData, apiKey?: string): 
     Please provide the output in strict JSON format matching the schema.
     `;
 
+    // Use String Literals for Types to avoid SDK Enum compatibility issues in browser bundles
     const response = await ai.models.generateContent({
       model: model,
       contents: userPrompt,
@@ -78,12 +100,12 @@ export const optimizePrompt = async (formData: CoverFormData, apiKey?: string): 
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.OBJECT,
+          type: "OBJECT",
           properties: {
-            parameterSummary: { type: Type.STRING },
-            finalPrompt: { type: Type.STRING },
-            chinesePrompt: { type: Type.STRING },
-            analysis: { type: Type.STRING },
+            parameterSummary: { type: "STRING" },
+            finalPrompt: { type: "STRING" },
+            chinesePrompt: { type: "STRING" },
+            analysis: { type: "STRING" },
           },
           required: ["parameterSummary", "finalPrompt", "chinesePrompt", "analysis"]
         }
@@ -91,7 +113,16 @@ export const optimizePrompt = async (formData: CoverFormData, apiKey?: string): 
     });
 
     if (response.text) {
-        return JSON.parse(cleanJsonString(response.text)) as OptimizationResult;
+        console.log("Raw AI Response:", response.text);
+        try {
+            const parsed = JSON.parse(cleanJsonString(response.text));
+            // Basic validation
+            if (!parsed.finalPrompt) throw new Error("Missing finalPrompt in AI response");
+            return parsed as OptimizationResult;
+        } catch (parseErr) {
+            console.error("JSON Parse Error:", parseErr, response.text);
+            throw new Error("AI returned invalid JSON. Please try again.");
+        }
     }
     throw new Error("Empty response from AI");
 
@@ -111,7 +142,7 @@ export const generateCoverImage = async (
     apiKey?: string
 ): Promise<string> => {
     try {
-        const finalApiKey = apiKey || process.env.API_KEY;
+        const finalApiKey = getApiKeySafe(apiKey);
         if (!finalApiKey) {
             throw new Error("API Key is missing. Please log in or set a custom key in Settings.");
         }

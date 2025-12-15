@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, Input, Picker, Button, Image, ScrollView, Block } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from '../../utils/constants';
+import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE } from '../../utils/constants';
 import { optimizePrompt, generateCoverImage } from '../../utils/geminiService';
 import './index.scss';
 
@@ -19,7 +19,7 @@ const FormInput = ({ label, value, onInput, placeholder, onPaste }: any) => (
     <View style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
       <Text className="label">{label}</Text>
       {onPaste && (
-        <Text style={{ color: '#c084fc', fontSize: '12px' }} onClick={onPaste}>粘贴</Text>
+        <Text style={{ color: '#c084fc', fontSize: '12px', padding: '4px' }} onClick={onPaste}>粘贴</Text>
       )}
     </View>
     <Input 
@@ -71,8 +71,12 @@ export default function Index() {
   };
 
   const handlePaste = async (field: string) => {
-    const res = await Taro.getClipboardData();
-    if (res.data) handleUpdate(field, res.data);
+    try {
+        const res = await Taro.getClipboardData();
+        if (res.data) handleUpdate(field, res.data);
+    } catch (e) {
+        // ignore
+    }
   };
 
   const chooseImage = async (type: 'person' | 'logo') => {
@@ -110,11 +114,15 @@ export default function Index() {
 
     try {
       const res = await optimizePrompt(formData, apiKey);
+      
+      if (!res) throw new Error("返回结果为空");
+      
       setResult(res);
       setStatus('prompt_success');
       Taro.hideLoading();
     } catch (err: any) {
       Taro.hideLoading();
+      console.error(err);
       Taro.showModal({ 
         title: '生成策略失败', 
         content: err.message || '请检查网络或 API Key', 
@@ -165,7 +173,10 @@ export default function Index() {
     
     const fs = Taro.getFileSystemManager();
     const fileName = `${Taro.env.USER_DATA_PATH}/cover_${Date.now()}.png`;
-    const buffer = Taro.base64ToArrayBuffer(generatedImage.substring(22)); 
+    // Remove prefix "data:image/png;base64," which is 22 chars
+    const base64Data = generatedImage.replace(/^data:image\/\w+;base64,/, "");
+
+    const buffer = Taro.base64ToArrayBuffer(base64Data); 
     
     fs.writeFile({
       filePath: fileName,
@@ -174,8 +185,16 @@ export default function Index() {
       success: () => {
         Taro.saveImageToPhotosAlbum({
           filePath: fileName,
-          success: () => Taro.showToast({ title: '已保存相册', icon: 'success' })
+          success: () => Taro.showToast({ title: '已保存相册', icon: 'success' }),
+          fail: (err) => {
+             console.error(err);
+             Taro.showToast({ title: '保存失败，请授权相册权限', icon: 'none' });
+          }
         })
+      },
+      fail: (err) => {
+          console.error(err);
+          Taro.showToast({ title: '写入临时文件失败', icon: 'none' });
       }
     });
   };
@@ -250,13 +269,13 @@ export default function Index() {
         {result && (
           <View className="bento-card" style={{ marginTop: '24px', borderColor: '#c084fc' }}>
              <SectionHeader title="AI 策略分析" icon="🧠" />
-             <Text style={{ fontSize: '14px', color: '#cbd5e1', lineHeight: '1.6' }}>{result.analysis}</Text>
+             <Text style={{ fontSize: '14px', color: '#cbd5e1', lineHeight: '1.6' }} selectable>{result.analysis || '无分析内容'}</Text>
              
              <View style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '16px 0' }} />
              
              <SectionHeader title="Prompt" icon="💬" />
              <View style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px' }}>
-               <Text style={{ fontSize: '12px', color: '#34d399', fontFamily: 'monospace' }} userSelect>{result.finalPrompt}</Text>
+               <Text style={{ fontSize: '12px', color: '#34d399', fontFamily: 'monospace' }} selectable>{result.finalPrompt || '无 Prompt'}</Text>
              </View>
           </View>
         )}

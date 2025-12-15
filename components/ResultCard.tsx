@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { OptimizationResult } from '../types';
 import { Loader2, Download, Copy, CheckCircle2, XCircle, ZoomIn, X, Image as ImageIcon, Sparkles, Cpu } from 'lucide-react';
@@ -37,7 +38,7 @@ export const AnalysisSection: React.FC<{
             )}
         </div>
         {result ? (
-            <p className="text-slate-300 text-sm leading-relaxed animate-in fade-in slide-in-from-bottom-2">
+            <p className="text-slate-300 text-sm leading-relaxed">
                 {result.analysis}
             </p>
         ) : (
@@ -106,7 +107,7 @@ export const PromptSection: React.FC<{
             </div>
             
             {result ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <PromptBox 
                         title="Prompt (English)" 
                         text={result.finalPrompt} 
@@ -134,7 +135,7 @@ export const PromptSection: React.FC<{
 
         {/* Modal */}
         {modalContent && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                 <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
                     <div className="flex items-center justify-between p-4 border-b border-slate-800">
                         <h3 className="font-bold text-white">{modalContent.title}</h3>

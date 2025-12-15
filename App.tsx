@@ -5,8 +5,23 @@ import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from 
 import { SelectInput, TextInput, FileInput, Label } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-// Added Lock to imports
-import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock } from 'lucide-react';
+
+// Safe SVG Spinner to avoid dependency crashes during critical loading states
+const LoadingSpinner = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`animate-spin ${className}`}
+  >
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);
 
 // Local BentoCard Component with Dark/Light mode support
 const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { children?: React.ReactNode, className?: string, title?: string, icon?: any, gradient?: string }) => (
@@ -36,6 +51,16 @@ const translateError = (err: any): string => {
     if (msg.includes("SAFETY")) return "生成内容触犯安全策略被拦截，请调整提示词或输入内容。";
     if (msg.includes("candidate")) return "模型未能生成有效内容，请重试。";
     return `生成出错: ${msg}`; 
+};
+
+// Safe Env Access
+const getEnvPassword = () => {
+    try {
+        // @ts-ignore
+        return process.env.PASSWORD;
+    } catch {
+        return "";
+    }
 };
 
 const App: React.FC = () => {
@@ -104,7 +129,7 @@ const App: React.FC = () => {
 
   // Auth Logic
   const handleLogin = () => {
-    if (passwordInput === process.env.PASSWORD) {
+    if (passwordInput === getEnvPassword()) {
         setIsLoggedIn(true);
         setShowLoginModal(false);
         setPasswordInput('');
@@ -135,17 +160,20 @@ const App: React.FC = () => {
         return;
     }
 
-    setStatus('analyzing');
-    setOptimizationResult(null);
-    setGeneratedImage(null);
-
     try {
-      // If effectiveKey is undefined (logged in), the service will use env key.
-      const result = await optimizePrompt(formData, effectiveKey);
-      setOptimizationResult(result);
-      setStatus('prompt_success');
+        setStatus('analyzing');
+        setOptimizationResult(null);
+        setGeneratedImage(null);
+
+        // If effectiveKey is undefined (logged in), the service will use env key.
+        const result = await optimizePrompt(formData, effectiveKey);
+        
+        if (!result) throw new Error("No result returned from optimization service");
+        
+        setOptimizationResult(result);
+        setStatus('prompt_success');
     } catch (err) {
-      console.error(err);
+      console.error("Strategy Generation Error:", err);
       setStatus('error');
       setErrorMsg(translateError(err));
     }
@@ -162,40 +190,40 @@ const App: React.FC = () => {
         return;
     }
 
-    setStatus('generating_image');
-    setErrorMsg(null);
-    
     try {
-      let personPart: ImagePart | null = null;
-      let logoPart: ImagePart | null = null;
+        setStatus('generating_image');
+        setErrorMsg(null);
+        
+        let personPart: ImagePart | null = null;
+        let logoPart: ImagePart | null = null;
 
-      // Handle Person Image Source
-      if (formData.personSource === '1' && personImage) {
-        const base64Data = await fileToGenerativePart(personImage);
-        personPart = { mimeType: personImage.type, data: base64Data };
-      } else if (formData.personSource === '3') {
-        try {
-            const response = await fetch(SPECIFIC_PERSON_IMAGE_URL);
-            if (!response.ok) throw new Error("Failed to load preset person image");
-            const blob = await response.blob();
-            const base64Data = await fileToGenerativePart(blob);
-            personPart = { mimeType: blob.type, data: base64Data };
-        } catch (fetchErr) {
-            console.error(fetchErr);
-            throw new Error("无法加载预设人物图片，请检查网络");
+        // Handle Person Image Source
+        if (formData.personSource === '1' && personImage) {
+            const base64Data = await fileToGenerativePart(personImage);
+            personPart = { mimeType: personImage.type, data: base64Data };
+        } else if (formData.personSource === '3') {
+            try {
+                const response = await fetch(SPECIFIC_PERSON_IMAGE_URL);
+                if (!response.ok) throw new Error("Failed to load preset person image");
+                const blob = await response.blob();
+                const base64Data = await fileToGenerativePart(blob);
+                personPart = { mimeType: blob.type, data: base64Data };
+            } catch (fetchErr) {
+                console.error(fetchErr);
+                throw new Error("无法加载预设人物图片，请检查网络");
+            }
         }
-      }
 
-      if (formData.logoType === '2' && logoImage) {
-        const base64Data = await fileToGenerativePart(logoImage);
-        logoPart = { mimeType: logoImage.type, data: base64Data };
-      }
+        if (formData.logoType === '2' && logoImage) {
+            const base64Data = await fileToGenerativePart(logoImage);
+            logoPart = { mimeType: logoImage.type, data: base64Data };
+        }
 
-      const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart, effectiveKey);
-      setGeneratedImage(imageUrl);
-      setStatus('complete');
+        const imageUrl = await generateCoverImage(optimizationResult.finalPrompt, personPart, logoPart, effectiveKey);
+        setGeneratedImage(imageUrl);
+        setStatus('complete');
     } catch (err) {
-      console.error(err);
+      console.error("Image Generation Error:", err);
       setStatus('error');
       setErrorMsg(translateError(err));
     }
@@ -453,7 +481,7 @@ const App: React.FC = () => {
                     disabled={isProcessing}
                     className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group"
                  >
-                    {status === 'analyzing' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                    {status === 'analyzing' ? <LoadingSpinner className="w-5 h-5" /> : <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />}
                     {status === 'analyzing' ? 'AI 正在深度分析策略...' : '✨ 生成爆款策略 & Prompt'}
                  </button>
                  
@@ -463,7 +491,7 @@ const App: React.FC = () => {
                         disabled={status === 'generating_image'}
                         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
                      >
-                         {status === 'generating_image' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />}
+                         {status === 'generating_image' ? <LoadingSpinner className="w-5 h-5" /> : <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />}
                          {status === 'generating_image' ? '正在绘制高清封面 (约10秒)...' : '🎨 开始绘制最终封面图'}
                      </button>
                  )}
@@ -575,3 +603,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

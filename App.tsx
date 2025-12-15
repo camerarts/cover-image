@@ -1,11 +1,58 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo } from 'react';
 import { CoverFormData, OptimizationResult } from './types';
 import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
 import { SelectInput, TextInput, FileInput, Label } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-import { Sparkles, Image as ImageIcon, LayoutTemplate, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, LayoutTemplate, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock, AlertTriangle } from 'lucide-react';
+
+// Error Boundary Component
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/50 rounded-2xl p-8 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Something went wrong</h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
+              The application encountered an unexpected error. Please try refreshing the page.
+            </p>
+            <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg text-left mb-6 overflow-auto max-h-48">
+              <code className="text-xs font-mono text-red-600 dark:text-red-400 break-words">
+                {this.state.error?.message}
+              </code>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold hover:opacity-90 transition-opacity"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Safe SVG Spinner to avoid dependency crashes during critical loading states
 const LoadingSpinner = ({ className }: { className?: string }) => (
@@ -57,13 +104,15 @@ const translateError = (err: any): string => {
 const getEnvPassword = () => {
     try {
         // @ts-ignore
-        return process.env.PASSWORD;
+        const envPass = process.env.PASSWORD;
+        // Default to 'admin' if environment variable is not set or empty
+        return envPass ? envPass : "admin";
     } catch {
-        return "";
+        return "admin";
     }
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   // Theme State
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -129,7 +178,8 @@ const App: React.FC = () => {
 
   // Auth Logic
   const handleLogin = () => {
-    if (passwordInput === getEnvPassword()) {
+    const currentPass = getEnvPassword();
+    if (passwordInput === currentPass) {
         setIsLoggedIn(true);
         setShowLoginModal(false);
         setPasswordInput('');
@@ -580,7 +630,7 @@ const App: React.FC = () => {
                 <div className="space-y-4">
                     <input 
                         type="password" 
-                        placeholder="输入访问密码" 
+                        placeholder="输入访问密码 (默认: admin)" 
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none text-center tracking-widest"
                         value={passwordInput}
                         onChange={(e) => setPasswordInput(e.target.value)}
@@ -602,4 +652,14 @@ const App: React.FC = () => {
   );
 };
 
+// Wrap AppContent with ErrorBoundary
+const App: React.FC = () => {
+    return (
+        <ErrorBoundary>
+            <AppContent />
+        </ErrorBoundary>
+    )
+}
+
 export default App;
+

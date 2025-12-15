@@ -29,7 +29,7 @@ export const AnalysisSection: React.FC<{
         <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">AI 分析 & 策略</h3>
-                <StatusIcon status={status} hasResult={!!result} />
+                <span className="shrink-0"><StatusIcon status={status} hasResult={!!result} /></span>
             </div>
             {result && (
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
@@ -48,7 +48,9 @@ export const AnalysisSection: React.FC<{
                 <div className="h-4 bg-slate-200 dark:bg-slate-700/50 rounded w-3/4 animate-pulse" />
                 <div className="h-4 bg-slate-200 dark:bg-slate-700/50 rounded w-1/2 animate-pulse" />
             </div> :
-            <div className="text-slate-500 dark:text-slate-600 text-sm italic">等待生成策略...</div>
+            <div className="text-slate-500 dark:text-slate-600 text-sm italic">
+                <span>等待生成策略...</span>
+            </div>
         )}
     </div>
   );
@@ -97,7 +99,7 @@ export const PromptSection: React.FC<{
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Prompt (绘图提示词)</h3>
-                    <StatusIcon status={status} hasResult={!!result} />
+                    <span className="shrink-0"><StatusIcon status={status} hasResult={!!result} /></span>
                 </div>
                  {result && (
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
@@ -231,3 +233,4 @@ export const ImagePreviewSection: React.FC<{
         </div>
     )
 }
+

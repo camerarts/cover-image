@@ -1,19 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CoverFormData, OptimizationResult } from './types';
 import { DROPDOWN_OPTIONS, INITIAL_FORM_STATE, SPECIFIC_PERSON_IMAGE_URL } from './constants';
 import { SelectInput, TextInput, FileInput, Label } from './components/UIComponents';
 import { AnalysisSection, PromptSection, ImagePreviewSection } from './components/ResultCard';
 import { optimizePrompt, generateCoverImage, fileToGenerativePart, ImagePart } from './services/geminiService';
-import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Lock, Key, Code2, Copy } from 'lucide-react';
+// Added Lock to imports
+import { Sparkles, Image as ImageIcon, LayoutTemplate, Loader2, User, BadgeCheck, Aperture, Settings, LogIn, LogOut, X, Key, Code2, Sun, Moon, Lock } from 'lucide-react';
 
-// Local BentoCard Component for layout consistency
+// Local BentoCard Component with Dark/Light mode support
 const BentoCard = ({ children, className = "", title, icon: Icon, gradient }: { children?: React.ReactNode, className?: string, title?: string, icon?: any, gradient?: string }) => (
-    <div className={`bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 shadow-xl ring-1 ring-white/5 flex flex-col ${className}`}>
+    <div className={`bg-white/80 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none ring-1 ring-slate-900/5 dark:ring-white/5 flex flex-col transition-all duration-300 ${className}`}>
         {title && (
-            <div className={`flex items-center gap-3 mb-6 p-3 rounded-xl bg-gradient-to-r ${gradient || 'from-slate-800 to-transparent'} border-l-4 border-white/20`}>
-                {Icon && <Icon className="w-5 h-5 text-white/80" />}
-                <h2 className="text-lg font-bold tracking-wide text-white drop-shadow-md">
+            <div className={`flex items-center gap-3 mb-6 p-3 rounded-xl bg-gradient-to-r ${gradient || 'from-slate-100 to-transparent dark:from-slate-800 dark:to-transparent'} border-l-4 border-slate-300 dark:border-white/20`}>
+                {Icon && <Icon className="w-5 h-5 text-slate-600 dark:text-white/80" />}
+                <h2 className="text-lg font-bold tracking-wide text-slate-800 dark:text-white drop-shadow-sm dark:drop-shadow-md">
                     {title}
                 </h2>
             </div>
@@ -38,6 +39,9 @@ const translateError = (err: any): string => {
 };
 
 const App: React.FC = () => {
+  // Theme State
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
   const [formData, setFormData] = useState<CoverFormData>(INITIAL_FORM_STATE);
   const [personImage, setPersonImage] = useState<File | null>(null);
   const [logoImage, setLogoImage] = useState<File | null>(null);
@@ -54,6 +58,19 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [customApiKey, setCustomApiKey] = useState('');
+
+  // Persist Theme
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('app-theme') as 'dark' | 'light';
+    if (savedTheme) {
+        setTheme(savedTheme);
+    }
+  }, []);
+
+  const toggleTheme = (newTheme: 'dark' | 'light') => {
+      setTheme(newTheme);
+      localStorage.setItem('app-theme', newTheme);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -187,14 +204,24 @@ const App: React.FC = () => {
   const isProcessing = status === 'analyzing' || status === 'generating_image';
 
   return (
-    <div className="min-h-screen bg-slate-950 relative text-slate-200 p-4 md:p-6 lg:p-10 overflow-x-hidden font-sans selection:bg-purple-500/30">
+    <div className={theme}>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative text-slate-900 dark:text-slate-200 p-4 md:p-6 lg:p-10 overflow-x-hidden font-sans selection:bg-purple-500/30 transition-colors duration-300">
       
-      {/* High-end Background Effects */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] mix-blend-screen" />
-        <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[100px] mix-blend-screen" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 brightness-150 contrast-150"></div>
+      {/* High-end Background Effects - Adapted for Themes */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Dark Mode Effects */}
+        <div className="hidden dark:block">
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] mix-blend-screen" />
+            <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[100px] mix-blend-screen" />
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 brightness-150 contrast-150"></div>
+        </div>
+        {/* Light Mode Effects - Softer, subtle gradients */}
+        <div className="block dark:hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-200/40 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-200/40 rounded-full blur-[120px]" />
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-[100px]"></div>
+        </div>
       </div>
 
       {/* Header */}
@@ -202,25 +229,44 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4 group">
             <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 blur-lg opacity-40 group-hover:opacity-80 transition-opacity rounded-full"></div>
-                <div className="relative w-10 h-10 bg-slate-900 border border-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
-                    <Aperture className="text-white w-6 h-6" />
+                <div className="relative w-10 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-center backdrop-blur-md shadow-sm">
+                    <Aperture className="text-purple-600 dark:text-white w-6 h-6" />
                 </div>
             </div>
             <div>
-                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight font-[Inter] flex items-center gap-3">
-                    <span>ViralCover <span className="text-purple-400">AI</span></span>
-                    <span className="hidden sm:block w-px h-6 bg-white/10 mx-1"></span>
-                    <span className="hidden sm:block text-lg font-bold text-slate-400 tracking-normal">爆款视频封面生成器</span>
+                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-700 to-slate-500 dark:from-white dark:via-slate-200 dark:to-slate-400 tracking-tight font-[Inter] flex items-center gap-3">
+                    <span>ViralCover <span className="text-purple-600 dark:text-purple-400">AI</span></span>
+                    <span className="hidden sm:block w-px h-6 bg-slate-300 dark:bg-white/10 mx-1"></span>
+                    <span className="hidden sm:block text-lg font-bold text-slate-500 dark:text-slate-400 tracking-normal">爆款视频封面生成器</span>
                 </h1>
             </div>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
+             
+             {/* Theme Switcher */}
+             <div className="flex items-center p-1 bg-slate-200 dark:bg-slate-800/50 rounded-full border border-slate-300 dark:border-white/10 backdrop-blur-sm mr-2">
+                <button
+                    onClick={() => toggleTheme('light')}
+                    className={`p-1.5 rounded-full transition-all flex items-center gap-1.5 ${theme === 'light' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                    title="简约白"
+                >
+                    <Sun className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={() => toggleTheme('dark')}
+                    className={`p-1.5 rounded-full transition-all flex items-center gap-1.5 ${theme === 'dark' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                    title="简约黑"
+                >
+                    <Moon className="w-4 h-4" />
+                </button>
+             </div>
+
              {isLoggedIn && (
                  <button
                     onClick={() => setShowApiModal(true)}
-                    className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                    className="p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all backdrop-blur-sm"
                     title="API 文档"
                  >
                     <Code2 className="w-5 h-5" />
@@ -229,7 +275,7 @@ const App: React.FC = () => {
 
              <button
                 onClick={() => setShowSettingsModal(true)}
-                className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                className="p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all backdrop-blur-sm"
                 title="设置 API Key"
              >
                 <Settings className="w-5 h-5" />
@@ -238,7 +284,7 @@ const App: React.FC = () => {
              {isLoggedIn ? (
                  <button
                     onClick={handleLogout}
-                    className="p-2.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all backdrop-blur-sm"
+                    className="p-2.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all backdrop-blur-sm"
                     title="已登录 (点击退出)"
                  >
                     <LogOut className="w-5 h-5" />
@@ -246,7 +292,7 @@ const App: React.FC = () => {
              ) : (
                  <button
                     onClick={() => setShowLoginModal(true)}
-                    className="p-2.5 rounded-full bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all backdrop-blur-sm"
+                    className="p-2.5 rounded-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all backdrop-blur-sm"
                     title="登录管理员"
                  >
                     <LogIn className="w-5 h-5" />
@@ -265,7 +311,7 @@ const App: React.FC = () => {
                 title="核心文案" 
                 icon={LayoutTemplate} 
                 className="md:col-span-2"
-                gradient="from-purple-500/20 to-transparent"
+                gradient="from-purple-500/10 to-transparent dark:from-purple-500/20"
             >
                 <div className="space-y-6">
                     <TextInput 
@@ -292,7 +338,7 @@ const App: React.FC = () => {
              <BentoCard 
                 title="视觉与构图" 
                 icon={ImageIcon} 
-                gradient="from-blue-500/20 to-transparent"
+                gradient="from-blue-500/10 to-transparent dark:from-blue-500/20"
              >
                  <div className="space-y-4">
                      <SelectInput 
@@ -324,7 +370,7 @@ const App: React.FC = () => {
              <BentoCard 
                 title="人物主体" 
                 icon={User} 
-                gradient="from-emerald-500/20 to-transparent"
+                gradient="from-emerald-500/10 to-transparent dark:from-emerald-500/20"
              >
                 <div className="space-y-4">
                      <div className="grid grid-cols-3 gap-2">
@@ -346,7 +392,7 @@ const App: React.FC = () => {
                     </div>
                     
                     {formData.personSource === '1' && (
-                        <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30 flex flex-col items-center text-center">
+                        <div className="bg-emerald-500/5 dark:bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20 dark:border-emerald-500/30 flex flex-col items-center text-center">
                             <Label>已选择: 上传照片 (Q5)</Label>
                             <FileInput 
                                 label="点击上传真人照片" 
@@ -363,7 +409,7 @@ const App: React.FC = () => {
                 title="品牌与标识" 
                 icon={BadgeCheck} 
                 className="md:col-span-2"
-                gradient="from-amber-500/20 to-transparent"
+                gradient="from-amber-500/10 to-transparent dark:from-amber-500/20"
              >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <TextInput 
@@ -382,7 +428,7 @@ const App: React.FC = () => {
                     />
                 </div>
                 {formData.logoType === '2' && (
-                    <div className="mt-4 p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                    <div className="mt-4 p-3 bg-amber-500/5 dark:bg-amber-500/10 rounded-xl border border-amber-500/20 dark:border-amber-500/30">
                          <Label>上传 Logo 图片</Label>
                          <FileInput 
                             label="上传 Logo 图片" 
@@ -396,7 +442,7 @@ const App: React.FC = () => {
             {/* Action Buttons */}
             <div className="md:col-span-2 flex flex-col gap-3">
                  {errorMsg && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400 text-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-400 text-sm animate-in fade-in slide-in-from-top-2">
                         <X className="w-4 h-4 shrink-0" />
                         <span>{errorMsg}</span>
                     </div>
@@ -426,7 +472,7 @@ const App: React.FC = () => {
 
         {/* Right Column: Results - 50% */}
         <div className="lg:col-span-6 flex flex-col gap-6">
-            <BentoCard title="AI 生成结果" icon={Sparkles} className="h-full min-h-[500px]" gradient="from-purple-600/20 to-transparent">
+            <BentoCard title="AI 生成结果" icon={Sparkles} className="h-full min-h-[500px]" gradient="from-purple-600/10 to-transparent dark:from-purple-600/20">
                  <div className="space-y-8">
                      <AnalysisSection status={status} result={optimizationResult} />
                      <PromptSection status={status} result={optimizationResult} />
@@ -437,29 +483,29 @@ const App: React.FC = () => {
 
       </main>
 
-      {/* Settings Modal */}
+      {/* Settings Modal - Styled for Light/Dark */}
       {showSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Settings className="w-5 h-5" /> API Key 设置
                     </h3>
-                    <button onClick={() => setShowSettingsModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-white" /></button>
+                    <button onClick={() => setShowSettingsModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-white" /></button>
                 </div>
 
                 <div className="space-y-4">
                      {/* Model Usage Info Block */}
-                     <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">模型使用说明</h4>
+                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                        <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">模型使用说明</h4>
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-300">1. 策略分析 & Prompt</span>
-                                <span className="text-xs font-mono px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30">Gemini 2.5 Flash</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-300">1. 策略分析 & Prompt</span>
+                                <span className="text-xs font-mono px-2 py-0.5 bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-500/30">Gemini 2.5 Flash</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-300">2. 高清绘图 (16:9)</span>
-                                <span className="text-xs font-mono px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">Gemini 3 Pro Image</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-300">2. 高清绘图 (16:9)</span>
+                                <span className="text-xs font-mono px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded border border-emerald-200 dark:border-emerald-500/30">Gemini 3 Pro Image</span>
                             </div>
                         </div>
                      </div>
@@ -467,12 +513,12 @@ const App: React.FC = () => {
                     <div>
                         <Label htmlFor="customApiKey">自定义 Google API Key (可选)</Label>
                         <div className="relative">
-                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                             <input 
                                 id="customApiKey"
                                 type="password" 
                                 placeholder="sk-..." 
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none placeholder-slate-400 dark:placeholder-slate-600"
                                 value={customApiKey}
                                 onChange={(e) => setCustomApiKey(e.target.value)}
                             />
@@ -495,26 +541,26 @@ const App: React.FC = () => {
 
       {/* Login Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-             <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm">
+             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Lock className="w-5 h-5" /> 管理员登录
                     </h3>
-                    <button onClick={() => setShowLoginModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-white" /></button>
+                    <button onClick={() => setShowLoginModal(false)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-white" /></button>
                 </div>
                 <div className="space-y-4">
                     <input 
                         type="password" 
                         placeholder="输入访问密码" 
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none text-center tracking-widest"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 outline-none text-center tracking-widest"
                         value={passwordInput}
                         onChange={(e) => setPasswordInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                     />
                     <button 
                         onClick={handleLogin}
-                        className="w-full py-2.5 bg-white text-black font-bold rounded-lg hover:bg-slate-200 transition-colors"
+                        className="w-full py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
                     >
                         验证
                     </button>
@@ -523,6 +569,7 @@ const App: React.FC = () => {
         </div>
       )}
 
+    </div>
     </div>
   );
 };

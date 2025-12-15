@@ -202,4 +202,3 @@ export const generateCoverImage = async (
         throw error;
     }
 };
-

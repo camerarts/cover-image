@@ -5,14 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ViralCover AI - Cover Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
       body { font-family: 'Inter', sans-serif; }
       /* Custom scrollbar for webkit */
       ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
-      ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.8); }
     </style>
   <script type="importmap">
 {
@@ -24,14 +36,13 @@
     "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
     "vite": "https://esm.sh/vite@^7.2.7",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "@tarojs/components": "https://esm.sh/@tarojs/components@^4.1.9",
-    "@tarojs/taro": "https://esm.sh/@tarojs/taro@^4.1.9"
+    "@tarojs/taro": "https://esm.sh/@tarojs/taro@^4.1.9",
+    "@tarojs/components": "https://esm.sh/@tarojs/components@^4.1.9"
   }
 }
 </script>
 </head>
-  <body class="bg-slate-950 text-white antialiased">
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white antialiased transition-colors duration-300">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

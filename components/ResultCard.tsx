@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { OptimizationResult } from '../types';
-import { Loader2, Download, Copy, CheckCircle2, XCircle, ZoomIn, X, Image as ImageIcon, Sparkles, Cpu } from 'lucide-react';
+import { Download, Copy, CheckCircle2, XCircle, ZoomIn, X, Image as ImageIcon, Sparkles, Cpu } from 'lucide-react';
 
-// Shared Helper for Status Icon
+// StatusIcon uses a simple SVG or other Lucide icons
 const StatusIcon = ({ status, hasResult }: { status: string, hasResult: boolean }) => {
   if (status === 'analyzing' && !hasResult) {
-     return <Loader2 className="w-4 h-4 animate-spin text-purple-500" />;
+     // Safe spinner
+     return <svg className="w-4 h-4 animate-spin text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
   }
   if (hasResult) {
       return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
@@ -177,7 +178,7 @@ export const ImagePreviewSection: React.FC<{
              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider">封面图预览</h3>
-                    {status === 'generating_image' && <Loader2 className="w-4 h-4 animate-spin text-teal-500" />}
+                    {status === 'generating_image' && <svg className="w-4 h-4 animate-spin text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
                     {status === 'complete' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                     {status === 'error' && generatedImage === null && <XCircle className="w-4 h-4 text-red-500" />}
                 </div>
@@ -230,3 +231,4 @@ export const ImagePreviewSection: React.FC<{
         </div>
     )
 }
+

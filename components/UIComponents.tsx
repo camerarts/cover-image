@@ -65,6 +65,20 @@ export const TextInput: React.FC<TextInputProps> = ({ label, className, onPasteC
   </div>
 );
 
+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+}
+
+export const TextArea: React.FC<TextAreaProps> = ({ label, className, ...props }) => (
+  <div className="w-full">
+    <Label htmlFor={props.id}>{label}</Label>
+    <textarea
+      className={`w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500 resize-y min-h-[80px] ${className}`}
+      {...props}
+    />
+  </div>
+);
+
 interface FileInputProps {
   label: string;
   onChange: (file: File | null) => void;
@@ -98,3 +112,4 @@ export const FileInput: React.FC<FileInputProps> = ({ label, onChange, selectedF
     </div>
   </div>
 );
+
